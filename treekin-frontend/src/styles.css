@@ -1,0 +1,707 @@
+/* ============================================
+   🌳 TreeKin - GenZ Social Media UI
+   Theme: Deep Forest Green + White + Yellow
+   Mobile-First Instagram/Snapchat Style
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap');
+
+/* ============================================
+   CSS CUSTOM PROPERTIES - DARKER GREEN THEME
+   ============================================ */
+:root {
+  /* Deep Forest Green Palette */
+  --green-50: #ecfdf5;
+  --green-100: #d1fae5;
+  --green-200: #a7f3d0;
+  --green-300: #6ee7b7;
+  --green-400: #34d399;
+  --green-500: #10b981;
+  --green-600: #059669;
+  --green-700: #047857;
+  --green-800: #065f46;
+  --green-900: #064e3b;
+  --green-950: #022c22;
+
+  /* Primary Color - Deep Emerald */
+  --primary: #059669;
+  --primary-dark: #047857;
+  --primary-darker: #065f46;
+  --primary-light: #10b981;
+
+  /* Yellow/Gold Accent for Buttons */
+  --yellow-50: #fefce8;
+  --yellow-100: #fef9c3;
+  --yellow-200: #fef08a;
+  --yellow-300: #fde047;
+  --yellow-400: #facc15;
+  --yellow-500: #eab308;
+  --yellow-600: #ca8a04;
+  --yellow-glow: rgba(250, 204, 21, 0.6);
+
+  /* Pure White Base */
+  --white: #ffffff;
+  --off-white: #fafafa;
+  --cream: #fffbeb;
+
+  /* Neutrals */
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+
+  /* Status Colors */
+  --error-bg: #fef2f2;
+  --error-border: #fecaca;
+  --error-text: #dc2626;
+  --success-bg: #ecfdf5;
+  --success-border: #a7f3d0;
+  --success-text: #059669;
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #065f46 0%, #059669 50%, #10b981 100%);
+  --gradient-yellow: linear-gradient(135deg, #facc15 0%, #fde047 50%, #fef08a 100%);
+  --gradient-header: linear-gradient(135deg, #064e3b 0%, #065f46 30%, #059669 70%, #10b981 100%);
+  --gradient-soft: linear-gradient(180deg, #ffffff 0%, #ecfdf5 100%);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  --shadow-yellow-glow: 0 0 20px rgba(250, 204, 21, 0.5), 0 0 40px rgba(250, 204, 21, 0.3);
+  --shadow-green-glow: 0 0 20px rgba(5, 150, 105, 0.4), 0 0 40px rgba(5, 150, 105, 0.2);
+
+  /* Glass Effect */
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.6);
+  --glass-blur: blur(20px);
+
+  /* Typography */
+  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'Outfit', 'Inter', sans-serif;
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 500ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-2xl: 32px;
+  --radius-full: 9999px;
+}
+
+/* ============================================
+   KEYFRAME ANIMATIONS
+   ============================================ */
+
+/* Button Glow Effect */
+@keyframes buttonGlow {
+  0% {
+    box-shadow: 0 0 5px var(--yellow-glow);
+  }
+
+  50% {
+    box-shadow: 0 0 30px var(--yellow-glow), 0 0 60px var(--yellow-glow);
+  }
+
+  100% {
+    box-shadow: 0 0 5px var(--yellow-glow);
+  }
+}
+
+@keyframes clickPulse {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(0.95);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* Entrance Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes popIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+
+  70% {
+    transform: scale(1.05);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Continuous Animations */
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-15px) rotate(3deg);
+  }
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+@keyframes gradientFlow {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes bounce {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* ============================================
+   GLOBAL RESET & BASE STYLES
+   ============================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+}
+
+body {
+  font-family: var(--font-primary);
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--gray-800);
+  background: var(--white);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ============================================
+   CONTAINER & LAYOUT - MOBILE FIRST
+   ============================================ */
+.container {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px;
+  animation: fadeIn 0.5s ease-out;
+}
+
+@media (min-width: 768px) {
+  .container {
+    max-width: 768px;
+    padding: 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    max-width: 900px;
+  }
+}
+
+/* ============================================
+   CARD STYLES - INSTAGRAM STYLE
+   ============================================ */
+.card {
+  background: var(--white);
+  border: 1px solid var(--gray-100);
+  border-radius: var(--radius-xl);
+  padding: 20px;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  transition: var(--transition-base);
+  animation: slideUp 0.4s ease-out both;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+/* ============================================
+   GRID & FLEX LAYOUTS
+   ============================================ */
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (min-width: 640px) {
+  .row {
+    flex-direction: row;
+    gap: 20px;
+  }
+
+  .row>* {
+    flex: 1;
+  }
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kv {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ============================================
+   TYPOGRAPHY
+   ============================================ */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--gray-900);
+  line-height: 1.2;
+}
+
+h1 {
+  font-size: 1.75rem;
+}
+
+h2 {
+  font-size: 1.25rem;
+  color: var(--primary-dark);
+}
+
+h3 {
+  font-size: 1.1rem;
+  color: var(--gray-700);
+}
+
+@media (min-width: 640px) {
+  h1 {
+    font-size: 2rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+}
+
+small {
+  font-size: 0.8rem;
+  color: var(--gray-500);
+}
+
+/* ============================================
+   FORM ELEMENTS
+   ============================================ */
+input,
+textarea,
+select {
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 1rem;
+  font-family: var(--font-primary);
+  color: var(--gray-800);
+  background: var(--gray-50);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  outline: none;
+  transition: var(--transition-base);
+  -webkit-appearance: none;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--gray-400);
+}
+
+input:hover,
+textarea:hover,
+select:hover {
+  border-color: var(--gray-300);
+  background: var(--white);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--primary);
+  background: var(--white);
+  box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.15);
+}
+
+textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+select {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 20px;
+  padding-right: 48px;
+}
+
+/* ============================================
+   BUTTONS - YELLOW WITH GLOW EFFECT
+   ============================================ */
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 24px;
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: var(--font-primary);
+  color: var(--gray-900);
+  background: var(--gradient-yellow);
+  background-size: 200% 200%;
+  border: none;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Button Shine Effect */
+button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: 0.5s;
+}
+
+button:hover::before {
+  left: 100%;
+}
+
+/* Button Hover State */
+button:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-yellow-glow);
+  animation: gradientFlow 2s ease infinite;
+}
+
+/* Button Active/Click State - GLOW EFFECT */
+button:active:not(:disabled) {
+  transform: scale(0.96);
+  animation: buttonGlow 0.6s ease-out, clickPulse 0.3s ease-out;
+}
+
+/* Button Focus State */
+button:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(250, 204, 21, 0.4), var(--shadow-yellow-glow);
+}
+
+/* Disabled Button */
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--gray-200);
+  color: var(--gray-500);
+}
+
+/* Secondary Button - Green Outline */
+button.secondary {
+  background: var(--white);
+  color: var(--primary-dark);
+  border: 2px solid var(--primary);
+  padding: 12px 22px;
+}
+
+button.secondary:hover:not(:disabled) {
+  background: var(--green-50);
+  border-color: var(--primary-dark);
+  box-shadow: var(--shadow-green-glow);
+}
+
+button.secondary:active:not(:disabled) {
+  background: var(--green-100);
+}
+
+/* ============================================
+   BADGES
+   ============================================ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--primary-darker);
+  background: var(--green-100);
+  border: 1px solid var(--green-200);
+  border-radius: var(--radius-full);
+  transition: var(--transition-fast);
+}
+
+.badge:hover {
+  background: var(--green-200);
+  transform: scale(1.05);
+}
+
+/* ============================================
+   LISTS & ITEMS
+   ============================================ */
+.list {
+  display: grid;
+  gap: 12px;
+}
+
+.item {
+  background: var(--white);
+  border: 1px solid var(--gray-100);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  transition: var(--transition-base);
+  animation: slideUp 0.4s ease-out both;
+}
+
+.item:hover {
+  border-color: var(--primary-light);
+  box-shadow: var(--shadow-md);
+}
+
+/* ============================================
+   ALERTS & MESSAGES
+   ============================================ */
+.error {
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+  color: var(--error-text);
+  padding: 14px 18px;
+  border-radius: var(--radius-lg);
+  font-weight: 500;
+  animation: popIn 0.4s ease-out;
+}
+
+.success {
+  background: var(--success-bg);
+  border: 1px solid var(--success-border);
+  color: var(--success-text);
+  padding: 14px 18px;
+  border-radius: var(--radius-lg);
+  font-weight: 500;
+  animation: popIn 0.4s ease-out;
+}
+
+/* ============================================
+   SCROLLBAR STYLING
+   ============================================ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--gray-100);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary-light);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* ============================================
+   SELECTION STYLING
+   ============================================ */
+::selection {
+  background: var(--yellow-200);
+  color: var(--gray-900);
+}
+
+/* ============================================
+   MOBILE OPTIMIZATIONS
+   ============================================ */
+@media (max-width: 480px) {
+  html {
+    font-size: 15px;
+  }
+
+  .card {
+    padding: 16px;
+    border-radius: var(--radius-lg);
+  }
+
+  button {
+    padding: 12px 20px;
+    font-size: 0.9rem;
+    width: 100%;
+  }
+
+  input,
+  textarea,
+  select {
+    padding: 12px 14px;
+    font-size: 16px;
+    /* Prevents iOS zoom */
+  }
+}
+
+/* Touch Device Optimizations */
+@media (hover: none) and (pointer: coarse) {
+  button:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  button:active {
+    transform: scale(0.96);
+    box-shadow: var(--shadow-yellow-glow);
+  }
+}
