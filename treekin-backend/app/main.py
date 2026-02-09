@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
+import os
 from .config import settings
 from .database import init_db
 from .routers import (
@@ -13,6 +15,10 @@ from .routers import (
     reports_router,
     leaderboard_router
 )
+
+# Ensure uploads directory exists
+UPLOADS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads", "trees")
+os.makedirs(UPLOADS_DIR, exist_ok=True)
 
 
 @asynccontextmanager
@@ -49,13 +55,17 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# CORS configuration
+# CORS configuration - allow all localhost origins for development
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",  # Vite dev server
+        "http://localhost:5174",  # Vite fallback port
+        "http://localhost:5175",  # Another fallback
         "http://localhost:3000",  # Alternative dev
         "http://127.0.0.1:5173",
+        "http://127.0.0.1:5174",
+        "http://127.0.0.1:5175",
         "http://127.0.0.1:3000",
     ],
     allow_credentials=True,
@@ -72,6 +82,9 @@ app.include_router(carbon_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
 app.include_router(reports_router, prefix="/api")
 app.include_router(leaderboard_router, prefix="/api")
+
+# Mount static files for uploaded images
+app.mount("/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
 
 
 @app.get("/")

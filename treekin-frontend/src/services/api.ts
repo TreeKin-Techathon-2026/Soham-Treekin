@@ -69,6 +69,15 @@ export const treesAPI = {
     adopt: (treeId: number) => api.post('/trees/adopt', { tree_id: treeId }),
     getNearby: (lat: number, lng: number, radius?: number) =>
         api.get('/trees/nearby', { params: { lat, lng, radius_km: radius || 5 } }),
+    uploadImage: (treeId: number, file: File, latitude?: number, longitude?: number) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        if (latitude !== undefined) formData.append('latitude', latitude.toString());
+        if (longitude !== undefined) formData.append('longitude', longitude.toString());
+        return api.post(`/trees/${treeId}/upload-image`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+    },
 };
 
 // Posts API

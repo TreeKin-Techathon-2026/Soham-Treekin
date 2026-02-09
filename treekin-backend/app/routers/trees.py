@@ -1,7 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
+import os
+import uuid
+import shutil
 from ..database import get_db
 from ..models.user import User
 from ..models.tree import Tree, TreeEvent
@@ -10,6 +13,9 @@ from ..schemas.tree import (
     TreeAdoptRequest, TreeEventCreate, TreeEventResponse
 )
 from ..services.auth_utils import get_current_user
+
+# Get uploads directory path
+UPLOADS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads", "trees")
 
 router = APIRouter(prefix="/trees", tags=["Trees"])
 
@@ -200,3 +206,74 @@ def get_nearby_trees(
         }
         for t in trees
     ]
+
+
+@router.post("/{tree_id}/upload-image")
+def upload_tree_image(
+    tree_id: int,
+    file: UploadFile = File(...),
+    latitude: Optional[float] = Form(None),
+    longitude: Optional[float] = Form(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Upload an image for a tree with optional geolocation."""
+    # Verify tree exists and user owns it
+    tree = db.query(Tree).filter(Tree.id == tree_id).first()
+    if not tree:
+        raise HTTPException(status_code=404, detail="Tree not found")
+    
+    if tree.owner_id != current_user.id and tree.adopter_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to upload to this tree")
+    
+    # Validate file type
+    allowed_types = ["image/jpeg", "image/png", "image/webp", "image/gif"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="Only image files (JPEG, PNG, WebP, GIF) allowed")
+    
+    # Generate unique filename
+    file_ext = os.path.splitext(file.filename)[1] if file.filename else ".jpg"
+    unique_filename = f"tree_{tree_id}_{uuid.uuid4().hex}{file_ext}"
+    file_path = os.path.join(UPLOADS_DIR, unique_filename)
+    
+    # Save file to disk
+    try:
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save image: {str(e)}")
+    
+    # Generate URL for the image
+    image_url = f"/uploads/{unique_filename}"
+    
+    # Update tree record
+    if not tree.main_image_url:
+        tree.main_image_url = image_url
+    
+    # Add to images array
+    current_images = tree.images or []
+    current_images.append({
+        "url": image_url,
+        "latitude": latitude,
+        "longitude": longitude,
+        "uploaded_at": datetime.utcnow().isoformat(),
+        "uploaded_by": current_user.id
+    })
+    tree.images = current_images
+    
+    # Update geolocation if provided and not already set
+    if latitude and longitude:
+        if not tree.geo_lat or not tree.geo_lng:
+            tree.geo_lat = latitude
+            tree.geo_lng = longitude
+    
+    db.commit()
+    db.refresh(tree)
+    
+    return {
+        "success": True,
+        "message": "Image uploaded successfully",
+        "image_url": image_url,
+        "tree_id": tree_id,
+        "total_images": len(current_images)
+    }
