@@ -14,8 +14,10 @@ from ..schemas.tree import (
 )
 from ..services.auth_utils import get_current_user
 
-# Get uploads directory path
-UPLOADS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads", "trees")
+# Save uploads to frontend public folder so Vite serves them directly
+FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "..", "treekin-frontend", "public", "assets", "trees")
+UPLOADS_DIR = FRONTEND_DIR
+os.makedirs(UPLOADS_DIR, exist_ok=True)
 
 router = APIRouter(prefix="/trees", tags=["Trees"])
 
@@ -243,8 +245,8 @@ def upload_tree_image(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to save image: {str(e)}")
     
-    # Generate URL for the image
-    image_url = f"/uploads/{unique_filename}"
+    # Generate URL for the image (served by Vite from public/assets/trees/)
+    image_url = f"/assets/trees/{unique_filename}"
     
     # Update tree record
     if not tree.main_image_url:

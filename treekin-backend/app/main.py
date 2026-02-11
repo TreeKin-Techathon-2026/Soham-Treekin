@@ -16,8 +16,8 @@ from .routers import (
     leaderboard_router
 )
 
-# Ensure uploads directory exists
-UPLOADS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads", "trees")
+# Ensure uploads directory exists (in frontend public folder)
+UPLOADS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "treekin-frontend", "public", "assets", "trees")
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 
 

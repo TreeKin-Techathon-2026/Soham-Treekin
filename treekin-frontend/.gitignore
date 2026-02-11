@@ -24,3 +24,12 @@ dist-ssr
 *.sw?
 .env
 .venv/
+*.db
+uploads/
+node_modules/
+Thumbs.db
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd

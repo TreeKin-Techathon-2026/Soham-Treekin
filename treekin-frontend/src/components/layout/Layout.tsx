@@ -1,18 +1,9 @@
 import React from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { Home, Search, Plus, MessageCircle, User, Bell, LogOut } from 'lucide-react';
-import { useAuthStore } from '../../store/authStore';
+import { Outlet, NavLink } from 'react-router-dom';
+import { Home, Compass, Plus, Trophy, User, Bell } from 'lucide-react';
 import './Layout.css';
 
 export const MainLayout: React.FC = () => {
-    const { user, logout } = useAuthStore();
-    const navigate = useNavigate();
-
-    const handleLogout = () => {
-        logout();
-        navigate('/login');
-    };
-
     return (
         <div className="app-layout">
             {/* Header */}
@@ -20,17 +11,11 @@ export const MainLayout: React.FC = () => {
                 <div className="header-inner">
                     <div className="logo-area">
                         <span className="logo-emoji">🌳</span>
-                        <div className="logo-text">
-                            <h1>TreeKin</h1>
-                            <span className="tagline">Plant • Adopt • Connect</span>
-                        </div>
+                        <h1 className="logo-title">TreeKin</h1>
                     </div>
                     <div className="header-actions">
                         <button className="header-btn" title="Notifications">
-                            <Bell size={20} />
-                        </button>
-                        <button className="header-btn" onClick={handleLogout} title="Logout">
-                            <LogOut size={20} />
+                            <Bell size={22} />
                         </button>
                     </div>
                 </div>
@@ -43,23 +28,25 @@ export const MainLayout: React.FC = () => {
 
             {/* Bottom Navigation */}
             <nav className="bottom-nav">
-                <NavLink to="/" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <Home size={22} />
+                <NavLink to="/" end className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                    <Home size={24} />
                     <span>Home</span>
                 </NavLink>
                 <NavLink to="/explore" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <Search size={22} />
+                    <Compass size={24} />
                     <span>Explore</span>
                 </NavLink>
-                <NavLink to="/plant" className="nav-item add-btn">
-                    <Plus size={24} />
+                <NavLink to="/plant" className={({ isActive }) => `nav-item nav-plant ${isActive ? 'active' : ''}`}>
+                    <div className="plant-fab">
+                        <Plus size={26} strokeWidth={2.5} />
+                    </div>
                 </NavLink>
-                <NavLink to="/chat" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <MessageCircle size={22} />
-                    <span>Chat</span>
+                <NavLink to="/leaderboard" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                    <Trophy size={24} />
+                    <span>Ranks</span>
                 </NavLink>
                 <NavLink to="/profile" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <User size={22} />
+                    <User size={24} />
                     <span>Profile</span>
                 </NavLink>
             </nav>
