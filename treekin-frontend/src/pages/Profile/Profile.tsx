@@ -40,6 +40,12 @@ interface PostData {
     created_at: string;
 }
 
+interface TreeUpdateData {
+    image_url: string;
+    caption: string;
+    uploaded_at: string;
+}
+
 // Mock data for sections not available via API
 const MOCK_ACHIEVEMENTS = [
     { id: 1, name: 'First Roots', desc: 'Planted your first tree', date: 'Mar 2023', icon: '🌱', color: 'green', unlocked: true },
@@ -58,129 +64,131 @@ const MOCK_ACTIVITY = [
     { id: 5, type: 'follow', text: 'Maria Garcia Started following you', sub: '', time: '1 week ago', iconColor: 'purple', avatar: '👩‍🦰' },
 ];
 
-const TREE_CATEGORIES = ['All', 'Birth', 'Memorial', 'Achievement', 'Couple'];
-
-// Tree card mock data to supplement real data
-const MOCK_TREE_CARDS = [
-    { category: 'birth', name: "Luna's Birth Oak", species: 'Oak', date: 'March 2023', desc: "Planted the day Luna was born. Watching them grow together has been the most beautiful...", likes: 84, comments: 12, co2: 124 },
-    { category: 'couple', name: 'Forever Together Maple', species: 'Maple', date: 'June 2023', desc: 'Our anniversary tree. Five years of love, growing stronger each season.', likes: 156, comments: 28, co2: 89 },
-    { category: 'achievement', name: 'Dream Achieved Cedar', species: 'Cedar', date: 'September 2023', desc: 'Celebrating getting my dream job. This cedar represents growth and resilience.', likes: 234, comments: 45, co2: 156 },
-    { category: 'memorial', name: 'Remembrance Willow', species: 'Willow', date: 'November 2023', desc: 'In loving memory of Grandma Rose. Her spirit lives on through this willow.', likes: 567, comments: 89, co2: 201 },
-];
-
 export const ProfilePage: React.FC = () => {
     const { user, logout } = useAuthStore();
     const [wallet, setWallet] = useState<WalletData | null>(null);
     const [myTrees, setMyTrees] = useState<TreeData[]>([]);
     const [myPosts, setMyPosts] = useState<PostData[]>([]);
-    const [activeCategory, setActiveCategory] = useState('All');
+    const [selectedTreeId, setSelectedTreeId] = useState<number | null>(null);
+    const [treeUpdates, setTreeUpdates] = useState<TreeUpdateData[]>([]);
+    const [updatesLoading, setUpdatesLoading] = useState(false);
+    const [fadeKey, setFadeKey] = useState(0);
 
+    // ... existing loadProfileData ...
+
+    // Auto-select first tree when trees are loaded
     useEffect(() => {
-        loadProfileData();
-    }, []);
+        if (myTrees.length > 0 && selectedTreeId === null) {
+            setSelectedTreeId(myTrees[0].id);
+        }
+    }, [myTrees]);
 
-    const loadProfileData = async () => {
+    // Fetch updates when selected tree changes
+    useEffect(() => {
+        if (selectedTreeId) {
+            fetchUpdates(selectedTreeId);
+        }
+    }, [selectedTreeId]);
+
+    const fetchUpdates = async (treeId: number) => {
+        setUpdatesLoading(true);
         try {
-            const [walletRes, treesRes, postsRes] = await Promise.all([
-                carbonAPI.getWallet(),
-                treesAPI.getMyTrees(),
-                postsAPI.list({ limit: 20 } as any),
-            ]);
-            setWallet(walletRes.data);
-            setMyTrees(treesRes.data);
-            const userPosts = postsRes.data.filter((p: any) => p.user_id === user?.id);
-            setMyPosts(userPosts);
-        } catch (error) {
-            console.error('Failed to load profile data:', error);
+            const res = await treesAPI.getTreeUpdates(treeId);
+            setTreeUpdates(res.data);
+        } catch (err) {
+            console.error('Failed to fetch tree updates:', err);
+            setTreeUpdates([]);
+        } finally {
+            setUpdatesLoading(false);
         }
     };
 
-    const formatDate = (dateStr: string) => {
-        const date = new Date(dateStr);
-        return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    const handleTreeSelect = (treeId: number) => {
+        if (treeId === selectedTreeId) return;
+        setFadeKey(prev => prev + 1);
+        setSelectedTreeId(treeId);
     };
 
-    const joinedDate = user?.id ? 'March 2023' : '';
-    const displayName = user?.display_name || user?.username || 'TreeKin User';
-    const treesCount = myTrees.length || user?.trees_planted || 0;
-    const co2Saved = user?.total_carbon_saved || 0;
+    const formatUpdateDate = (dateStr: string) => {
+        if (!dateStr) return '';
+        return new Date(dateStr).toLocaleDateString('en-US', {
+            month: 'short', day: 'numeric', year: 'numeric'
+        });
+    };
 
-    const filteredMockTrees = activeCategory === 'All'
-        ? MOCK_TREE_CARDS
-        : MOCK_TREE_CARDS.filter(t => t.category.toLowerCase() === activeCategory.toLowerCase());
+    // ... existing formatDate ...
+
+    // ... existing helper variables ...
 
     const unlockedAchievements = MOCK_ACHIEVEMENTS.filter(a => a.unlocked).length;
+
+    // Derived state
+    const treesCount = myTrees.length || user?.trees_planted || 0;
+    const co2Saved = user?.total_carbon_saved || 0;
+    const joinedDate = (user as any)?.created_at ? new Date((user as any).created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : '2023';
+    const displayName = user?.display_name || user?.username || 'Eco Warrior';
 
     return (
         <div className="profile-page-wrapper">
             <div className="profile-page">
-                {/* Cover Photo */}
-                <div className="profile-cover">
-                    <div className="profile-cover-gradient" />
-                </div>
-
-                {/* Profile Header */}
-                <div className="profile-header-section">
-                    <div className="profile-header-top">
-                        <div className="profile-avatar">
-                            {user?.avatar_url ? (
-                                <img src={user.avatar_url} alt="" />
-                            ) : (
-                                <span className="avatar-initial">
-                                    {displayName[0].toUpperCase()}
-                                </span>
-                            )}
-                        </div>
-                        <div>
-                            <div className="profile-name-row">
-                                <h1>{displayName}</h1>
-                                {user?.is_verified && (
-                                    <span className="verified-badge">
-                                        <CheckCircle /> Verified Planter
-                                    </span>
+                <div className="profile-header">
+                    <div className="profile-cover">
+                        <img src="https://images.unsplash.com/photo-1502082553048-f009c37129b9?auto=format&fit=crop&q=80&w=1200" alt="Cover" />
+                    </div>
+                    <div className="profile-header-content">
+                        <div className="profile-avatar-container">
+                            <div className="profile-avatar">
+                                {user?.avatar_url ? (
+                                    <img src={user.avatar_url} alt={displayName} />
+                                ) : (
+                                    <div className="avatar-placeholder">{displayName[0]}</div>
                                 )}
                             </div>
-                            <p className="profile-username">@{user?.username}</p>
+                            <button className="edit-profile-btn">
+                                <Edit2 size={16} />
+                            </button>
                         </div>
-                    </div>
 
-                    <button className="profile-edit-btn">
-                        <Edit2 size={15} />
-                        Edit Profile
-                    </button>
+                        <div className="profile-info">
+                            <div className="profile-name-row">
+                                <h1>{displayName}</h1>
+                                {(user as any)?.is_verified && <CheckCircle size={18} className="verified-badge" />}
+                            </div>
+                            <p className="profile-bio">{(user as any)?.bio || 'Nature lover & Tree custodian 🌳'}</p>
 
-                    {user?.bio && <p className="profile-bio">{user.bio}</p>}
-                    {!user?.bio && (
-                        <p className="profile-bio">
-                            Environmental advocate and tree lover. Growing my legacy one tree at a time. 🌳
-                        </p>
-                    )}
+                            <div className="profile-stats-row">
+                                <div className="profile-stat">
+                                    <span className="stat-value">{treesCount}</span>
+                                    <span className="stat-label">Trees</span>
+                                </div>
+                                <div className="profile-stat">
+                                    <span className="stat-value">{myPosts.length}</span>
+                                    <span className="stat-label">Posts</span>
+                                </div>
+                                <div className="profile-stat">
+                                    <span className="stat-value">124</span>
+                                    <span className="stat-label">Following</span>
+                                </div>
+                                <div className="profile-stat">
+                                    <span className="stat-value">8.5k</span>
+                                    <span className="stat-label">Followers</span>
+                                </div>
+                            </div>
 
-                    <div className="profile-meta-row">
-                        <span className="profile-meta-item">
-                            <MapPin /> Portland, Oregon
-                        </span>
-                        <span className="profile-meta-item">
-                            <Calendar /> Joined {joinedDate}
-                        </span>
-                        <span className="profile-meta-item">
-                            <Link2 />
-                            <a href="#">{user?.username || 'treekin'}.eco</a>
-                        </span>
-                    </div>
-
-                    <div className="profile-stats-row">
-                        <div className="profile-stat">
-                            <span className="stat-number">{treesCount}</span>
-                            <span className="stat-label">trees</span>
-                        </div>
-                        <div className="profile-stat">
-                            <span className="stat-number">847</span>
-                            <span className="stat-label">followers</span>
-                        </div>
-                        <div className="profile-stat">
-                            <span className="stat-number">234</span>
-                            <span className="stat-label">following</span>
+                            <div className="profile-meta-row">
+                                <div className="profile-meta-item">
+                                    <MapPin size={14} />
+                                    <span>{(user as any)?.location || 'Portland, OR'}</span>
+                                </div>
+                                <div className="profile-meta-item">
+                                    <Calendar size={14} />
+                                    <span>Joined {joinedDate}</span>
+                                </div>
+                                <div className="profile-meta-item">
+                                    <Link2 size={14} />
+                                    <a href="#">treekin.com/{user?.username}</a>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -191,6 +199,7 @@ export const ProfilePage: React.FC = () => {
                     <div className="profile-section-card">
                         <h2>Environmental Impact</h2>
                         <div className="impact-grid">
+                            {/* ... Impact cards ... */}
                             <div className="impact-card">
                                 <div className="impact-card-icon green">
                                     <TreeDeciduous size={20} />
@@ -226,88 +235,68 @@ export const ProfilePage: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* My Tree Collection - Instagram-style Grid */}
+                    {/* My Tree Collection - Tree Timeline */}
                     <div className="profile-section-card">
                         <div className="tree-collection-header">
-                            <h2>My Tree Collection</h2>
-                            <span className="tree-collection-count">{treesCount || MOCK_TREE_CARDS.length} trees</span>
+                            <h2>My Tree Journey</h2>
+                            <span className="tree-collection-count">{treesCount} planted</span>
                         </div>
 
-                        <div className="tree-tabs">
-                            {TREE_CATEGORIES.map(cat => (
-                                <button
-                                    key={cat}
-                                    className={`tree-tab ${activeCategory === cat ? 'active' : ''}`}
-                                    onClick={() => setActiveCategory(cat)}
-                                >
-                                    {cat}
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* Show real trees if available, otherwise mock */}
                         {myTrees.length > 0 ? (
-                            <div className="trees-grid">
-                                {myTrees.map((tree) => (
-                                    <div key={tree.id} className="tree-card">
-                                        <div className="tree-card-image">
-                                            {tree.main_image_url ? (
-                                                <img src={tree.main_image_url} alt={tree.name} />
-                                            ) : (
-                                                <div className={`tree-card-placeholder ${tree.event_type || 'other'}`}>
-                                                    🌳
+                            <>
+                                {/* Tree Selector Pills */}
+                                <div className="tree-selector-pills">
+                                    {myTrees.map(tree => (
+                                        <button
+                                            key={tree.id}
+                                            className={`tree-pill ${selectedTreeId === tree.id ? 'active' : ''}`}
+                                            onClick={() => handleTreeSelect(tree.id)}
+                                        >
+                                            🌳 {tree.name}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* Tree Updates Grid */}
+                                <div className="tree-updates-section" key={fadeKey}>
+                                    {updatesLoading ? (
+                                        <div className="tree-updates-loading">
+                                            <div className="loading-spinner-small" /> Loading updates...
+                                        </div>
+                                    ) : treeUpdates.length > 0 ? (
+                                        <div className="tree-updates-grid">
+                                            {treeUpdates.map((update, idx) => (
+                                                <div key={idx} className="tree-update-card">
+                                                    <div className="tree-update-image">
+                                                        <img src={update.image_url} alt={update.caption} />
+                                                    </div>
+                                                    <div className="tree-update-info">
+                                                        <p className="tree-update-caption">{update.caption}</p>
+                                                        <span className="tree-update-date">
+                                                            <Calendar size={12} /> {formatUpdateDate(update.uploaded_at)}
+                                                        </span>
+                                                    </div>
                                                 </div>
-                                            )}
-                                            <span className={`tree-card-badge ${tree.event_type || 'birth'}`}>
-                                                {tree.event_type || tree.status}
-                                            </span>
+                                            ))}
                                         </div>
-                                        <div className="tree-card-body">
-                                            <h3 className="tree-card-title">{tree.name}</h3>
-                                            <p className="tree-card-species">{tree.species || 'Unknown'} · {formatDate(tree.created_at)}</p>
-                                            <div className="tree-card-footer">
-                                                <div className="tree-card-actions">
-                                                    <button className="tree-card-action"><Heart size={16} /> 0</button>
-                                                    <button className="tree-card-action"><MessageCircle size={16} /> 0</button>
-                                                    <button className="tree-card-action"><Share2 size={16} /></button>
-                                                </div>
-                                            </div>
+                                    ) : (
+                                        <div className="tree-updates-empty">
+                                            <p>No growth updates yet 🌱</p>
+                                            <span>Start documenting your tree's journey!</span>
+                                            <button
+                                                className="plant-btn small"
+                                                onClick={() => window.location.href = `/tree/${selectedTreeId}`}
+                                            >
+                                                Add Update
+                                            </button>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : filteredMockTrees.length > 0 ? (
-                            <div className="trees-grid">
-                                {filteredMockTrees.map((tree, i) => (
-                                    <div key={i} className="tree-card">
-                                        <div className="tree-card-image">
-                                            <div className={`tree-card-placeholder ${tree.category}`}>
-                                                🌳
-                                            </div>
-                                            <span className={`tree-card-badge ${tree.category}`}>
-                                                {tree.category}
-                                            </span>
-                                        </div>
-                                        <div className="tree-card-body">
-                                            <h3 className="tree-card-title">{tree.name}</h3>
-                                            <p className="tree-card-species">{tree.species} · {tree.date}</p>
-                                            <p className="tree-card-desc">{tree.desc}</p>
-                                            <div className="tree-card-footer">
-                                                <div className="tree-card-actions">
-                                                    <button className="tree-card-action"><Heart size={16} /> {tree.likes}</button>
-                                                    <button className="tree-card-action"><MessageCircle size={16} /> {tree.comments}</button>
-                                                    <button className="tree-card-action"><Share2 size={16} /></button>
-                                                </div>
-                                                <span className="tree-card-co2">{tree.co2} kg CO2</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                                    )}
+                                </div>
+                            </>
                         ) : (
                             <div className="empty-state">
                                 <TreeDeciduous size={48} />
-                                <p>No trees in this category yet</p>
+                                <p>You haven't planted any trees yet.</p>
                                 <button className="plant-btn" onClick={() => window.location.href = '/plant'}>
                                     Plant Your First Tree
                                 </button>

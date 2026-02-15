@@ -78,6 +78,7 @@ export const treesAPI = {
             headers: { 'Content-Type': 'multipart/form-data' },
         });
     },
+    getTreeUpdates: (treeId: number) => api.get(`/trees/${treeId}/updates`),
 };
 
 // Posts API

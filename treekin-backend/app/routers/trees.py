@@ -12,6 +12,8 @@ from ..schemas.tree import (
     TreeCreate, TreeUpdate, TreeResponse,
     TreeAdoptRequest, TreeEventCreate, TreeEventResponse
 )
+from ..models.post import Post  # Import Post model
+
 from ..services.auth_utils import get_current_user
 
 # Save uploads to frontend public folder so Vite serves them directly
@@ -210,6 +212,34 @@ def get_nearby_trees(
     ]
 
 
+@router.get("/{tree_id}/updates")
+def get_tree_updates(tree_id: int, db: Session = Depends(get_db)):
+    """Get all growth update photos for a tree."""
+    tree = db.query(Tree).filter(Tree.id == tree_id).first()
+    if not tree:
+        raise HTTPException(status_code=404, detail="Tree not found")
+
+    images = tree.images or []
+    updates = []
+    for i, img in enumerate(images):
+        if isinstance(img, dict):
+            updates.append({
+                "image_url": img.get("url", ""),
+                "caption": img.get("caption", f"Growth update #{i + 1}"),
+                "uploaded_at": img.get("uploaded_at", ""),
+            })
+        elif isinstance(img, str):
+            updates.append({
+                "image_url": img,
+                "caption": f"Growth update #{i + 1}",
+                "uploaded_at": "",
+            })
+
+    # Most recent first
+    updates.reverse()
+    return updates
+
+
 @router.post("/{tree_id}/upload-image")
 def upload_tree_image(
     tree_id: int,
@@ -233,10 +263,12 @@ def upload_tree_image(
     if file.content_type not in allowed_types:
         raise HTTPException(status_code=400, detail="Only image files (JPEG, PNG, WebP, GIF) allowed")
     
-    # Generate unique filename
+    # Generate unique filename and save in per-username folder
     file_ext = os.path.splitext(file.filename)[1] if file.filename else ".jpg"
     unique_filename = f"tree_{tree_id}_{uuid.uuid4().hex}{file_ext}"
-    file_path = os.path.join(UPLOADS_DIR, unique_filename)
+    user_folder = os.path.join(UPLOADS_DIR, current_user.username)
+    os.makedirs(user_folder, exist_ok=True)
+    file_path = os.path.join(user_folder, unique_filename)
     
     # Save file to disk
     try:
@@ -245,8 +277,8 @@ def upload_tree_image(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to save image: {str(e)}")
     
-    # Generate URL for the image (served by Vite from public/assets/trees/)
-    image_url = f"/assets/trees/{unique_filename}"
+    # Generate URL for the image (served by Vite from public/assets/trees/{username}/)
+    image_url = f"/assets/trees/{current_user.username}/{unique_filename}"
     
     # Update tree record
     if not tree.main_image_url:
@@ -262,6 +294,20 @@ def upload_tree_image(
         "uploaded_by": current_user.id
     })
     tree.images = current_images
+    
+    # Auto-create a social post for this upload
+    try:
+        new_post = Post(
+            tree_id=tree_id,
+            user_id=current_user.id,
+            content=f"Just planted a new {tree.species or 'tree'}! 🌳 Check it out!",
+            media_urls=[image_url]  # Add the image to the post
+        )
+        db.add(new_post)
+        # Commit will happen with the tree update
+    except Exception as e:
+        print(f"Error creating auto-post: {e}")
+        # Don't fail the upload if post creation fails
     
     # Update geolocation if provided and not already set
     if latitude and longitude:

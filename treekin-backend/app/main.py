@@ -83,8 +83,8 @@ app.include_router(chat_router, prefix="/api")
 app.include_router(reports_router, prefix="/api")
 app.include_router(leaderboard_router, prefix="/api")
 
-# Mount static files for uploaded images
-app.mount("/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
+# Note: Uploaded images are saved to treekin-frontend/public/assets/trees/
+# and served directly by Vite during development
 
 
 @app.get("/")

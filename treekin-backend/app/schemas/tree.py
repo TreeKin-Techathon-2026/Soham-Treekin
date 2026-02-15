@@ -64,7 +64,7 @@ class TreeResponse(TreeBase):
     carbon_credits: float = 0.0
     total_tredits_earned: float = 0.0
     main_image_url: Optional[str] = None
-    images: List[str] = []
+    images: Optional[List[Any]] = []
     created_at: datetime
 
     class Config:

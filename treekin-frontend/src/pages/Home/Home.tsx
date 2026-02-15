@@ -112,31 +112,40 @@ export const HomePage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
     const [savedPosts, setSavedPosts] = useState<Set<number>>(new Set());
+    const [commentText, setCommentText] = useState<{ [key: number]: string }>({});
+    const [expandedComments, setExpandedComments] = useState<Set<number>>(new Set());
 
     useEffect(() => {
         loadData();
     }, []);
 
     const loadData = async () => {
+        setLoading(true);
+        // Load independent data streams
         try {
-            const [postsRes, statsRes] = await Promise.all([
-                postsAPI.list(),
-                leaderboardAPI.getStats(),
-            ]);
+            const postsRes = await postsAPI.list();
             const apiPosts = postsRes.data;
             setPosts(apiPosts.length > 0 ? apiPosts : MOCK_POSTS);
-            setStats(statsRes.data);
 
             // Track initially liked posts
             const liked = new Set<number>();
-            apiPosts.forEach((p: Post) => { if (p.is_liked) liked.add(p.id); });
+            if (apiPosts.length > 0) {
+                apiPosts.forEach((p: Post) => { if (p.is_liked) liked.add(p.id); });
+            }
             setLikedPosts(liked);
         } catch (error) {
-            console.error('Failed to load data:', error);
+            console.error('Failed to load posts:', error);
             setPosts(MOCK_POSTS);
-        } finally {
-            setLoading(false);
         }
+
+        try {
+            const statsRes = await leaderboardAPI.getStats();
+            setStats(statsRes.data);
+        } catch (error) {
+            console.error('Failed to load stats:', error);
+        }
+
+        setLoading(false);
     };
 
     const handleLike = async (postId: number) => {
@@ -179,11 +188,35 @@ export const HomePage: React.FC = () => {
         }
     };
 
+    const toggleComments = (postId: number) => {
+        const newExpanded = new Set(expandedComments);
+        if (newExpanded.has(postId)) {
+            newExpanded.delete(postId);
+        } else {
+            newExpanded.add(postId);
+        }
+        setExpandedComments(newExpanded);
+    };
+
+    const handleCommentSubmit = async (postId: number) => {
+        const text = commentText[postId];
+        if (!text?.trim()) return;
+
+        try {
+            await postsAPI.addComment(postId, text);
+            // Clear input and ideally refetch comments or optimistically update
+            setCommentText({ ...commentText, [postId]: '' });
+            alert('Comment added!'); // Temporary feedback
+        } catch (error) {
+            console.error('Failed to post comment:', error);
+        }
+    };
+
     if (loading) {
         return (
             <div className="home-loading">
                 <div className="loading-spinner" />
-                <p>Loading your feed...</p>
+                <p>Loading your green feed...</p>
             </div>
         );
     }
@@ -215,6 +248,12 @@ export const HomePage: React.FC = () => {
                     const initial = displayName[0].toUpperCase();
                     const isLiked = likedPosts.has(post.id);
                     const isSaved = savedPosts.has(post.id);
+                    const isCommentsOpen = expandedComments.has(post.id);
+
+                    // Ensure media URLs are valid strings
+                    const mediaUrl = post.media_urls && post.media_urls.length > 0 && typeof post.media_urls[0] === 'string'
+                        ? post.media_urls[0]
+                        : null;
 
                     return (
                         <article key={post.id} className="post">
@@ -240,13 +279,13 @@ export const HomePage: React.FC = () => {
                                 </button>
                             </div>
 
-                            {/* Post Image (placeholder if no media) */}
+                            {/* Post Image */}
                             <div
                                 className="post-image-area"
                                 onDoubleClick={() => handleDoubleClick(post.id)}
                             >
-                                {post.media_urls?.length > 0 ? (
-                                    <img src={post.media_urls[0]} alt="Post" className="post-image" />
+                                {mediaUrl ? (
+                                    <img src={mediaUrl} alt="Post" className="post-image" />
                                 ) : (
                                     <div className="post-image-placeholder">
                                         <span className="placeholder-emoji">🌳</span>
@@ -268,7 +307,10 @@ export const HomePage: React.FC = () => {
                                             stroke={isLiked ? '#ed4956' : 'currentColor'}
                                         />
                                     </button>
-                                    <button className="post-action-btn">
+                                    <button
+                                        className="post-action-btn"
+                                        onClick={() => toggleComments(post.id)}
+                                    >
                                         <MessageCircle size={24} />
                                     </button>
                                     <button className="post-action-btn">
@@ -297,21 +339,37 @@ export const HomePage: React.FC = () => {
                                 {' '}{post.content}
                             </div>
 
-                            {/* Comments link */}
-                            {post.comments_count > 0 && (
-                                <button className="post-view-comments">
-                                    View all {post.comments_count} comments
-                                </button>
-                            )}
-
                             {/* Timestamp */}
                             <div className="post-timestamp">
                                 {timeAgo(post.created_at)}
                             </div>
+
+                            {/* Comments Section */}
+                            {isCommentsOpen && (
+                                <div className="post-comments-section">
+                                    <div className="comment-input-row">
+                                        <input
+                                            type="text"
+                                            placeholder="Add a comment..."
+                                            value={commentText[post.id] || ''}
+                                            onChange={(e) => setCommentText({ ...commentText, [post.id]: e.target.value })}
+                                            onKeyDown={(e) => e.key === 'Enter' && handleCommentSubmit(post.id)}
+                                        />
+                                        <button
+                                            className="post-comment-btn"
+                                            disabled={!commentText[post.id]}
+                                            onClick={() => handleCommentSubmit(post.id)}
+                                        >
+                                            Post
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </article>
                     );
                 })}
             </div>
+            <div style={{ height: 80 }} /> {/* Spacer for bottom nav */}
         </div>
     );
 };

@@ -384,3 +384,51 @@
         max-width: 100%;
     }
 }
+
+/* ============================================
+   COMMENTS SECTION
+   ============================================ */
+.post-comments-section {
+    padding: 0 14px 14px;
+    border-top: 1px solid #efefef;
+    margin-top: 8px;
+    padding-top: 12px;
+}
+
+.comment-input-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.comment-input-row input {
+    flex: 1;
+    border: none;
+    background: #fafafa;
+    padding: 8px 12px;
+    border-radius: 18px;
+    font-size: 0.9rem;
+    outline: none;
+    border: 1px solid #dbdbdb;
+}
+
+.comment-input-row input:focus {
+    background: white;
+    border-color: #a8a8a8;
+}
+
+.post-comment-btn {
+    color: #0095f6;
+    font-weight: 600;
+    font-size: 0.9rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    min-width: 40px;
+}
+
+.post-comment-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
