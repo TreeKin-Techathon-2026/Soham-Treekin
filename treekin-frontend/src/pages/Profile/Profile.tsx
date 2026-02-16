@@ -74,7 +74,25 @@ export const ProfilePage: React.FC = () => {
     const [updatesLoading, setUpdatesLoading] = useState(false);
     const [fadeKey, setFadeKey] = useState(0);
 
-    // ... existing loadProfileData ...
+    const loadProfileData = async () => {
+        if (!user) return;
+        try {
+            const [treesRes, postsRes, walletRes] = await Promise.all([
+                treesAPI.getMyTrees(),
+                postsAPI.list({ user_id: (user as any).id }),
+                carbonAPI.getWallet(),
+            ]);
+            setMyTrees(treesRes.data);
+            setMyPosts(postsRes.data);
+            setWallet(walletRes.data);
+        } catch (err) {
+            console.error('Failed to load profile data:', err);
+        }
+    };
+
+    useEffect(() => {
+        loadProfileData();
+    }, [user]);
 
     // Auto-select first tree when trees are loaded
     useEffect(() => {
@@ -116,9 +134,12 @@ export const ProfilePage: React.FC = () => {
         });
     };
 
-    // ... existing formatDate ...
-
-    // ... existing helper variables ...
+    const formatDate = (dateStr: string) => {
+        if (!dateStr) return '';
+        return new Date(dateStr).toLocaleDateString('en-US', {
+            month: 'short', day: 'numeric', year: 'numeric'
+        });
+    };
 
     const unlockedAchievements = MOCK_ACHIEVEMENTS.filter(a => a.unlocked).length;
 
