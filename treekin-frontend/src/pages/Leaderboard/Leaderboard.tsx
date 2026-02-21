@@ -5,13 +5,23 @@ import { leaderboardAPI } from '../../services/api';
 import './Leaderboard.css';
 
 interface LeaderboardUser {
-    id: number;
+    user_id: number;
     username: string;
     display_name?: string;
     avatar_url?: string;
-    count?: number;
-    carbon_saved?: number;
-    tredits?: number;
+    rank: number;
+    // Planters fields
+    total_trees_planted?: number;
+    total_growth_updates?: number;
+    // Adopters fields
+    total_trees_adopted?: number;
+    total_credits_spent?: number;
+    adoption_score?: number;
+    // Carbon fields
+    total_carbon_offset?: number;
+    total_trees?: number;
+    // Tredits fields
+    tredits_balance?: number;
 }
 
 type Category = 'planters' | 'adopters' | 'carbon' | 'tredits';
@@ -63,12 +73,13 @@ export const LeaderboardPage: React.FC = () => {
     const getValueLabel = (user: LeaderboardUser) => {
         switch (category) {
             case 'planters':
+                return `${user.total_trees_planted || 0} trees`;
             case 'adopters':
-                return `${user.count || 0} trees`;
+                return `Score: ${user.adoption_score || 0}`;
             case 'carbon':
-                return `${(user.carbon_saved || 0).toFixed(1)} kg`;
+                return `${(user.total_carbon_offset || 0).toFixed(1)} kg CO₂`;
             case 'tredits':
-                return `${(user.tredits || 0).toFixed(0)} TREDITS`;
+                return `${(user.tredits_balance || 0).toFixed(0)} TREDITS`;
         }
     };
 
@@ -118,10 +129,10 @@ export const LeaderboardPage: React.FC = () => {
                 </Card>
             ) : (
                 <div className="leaderboard-list">
-                    {users.map((user, index) => (
-                        <Card key={user.id} className={`rank-card rank-${index + 1}`}>
+                    {users.map((user) => (
+                        <Card key={user.user_id ?? user.username} className={`rank-card rank-${user.rank}`}>
                             <span className="rank-number">
-                                {index < 3 ? ['🥇', '🥈', '🥉'][index] : `#${index + 1}`}
+                                {user.rank <= 3 ? ['🥇', '🥈', '🥉'][user.rank - 1] : `#${user.rank}`}
                             </span>
                             <div className="rank-avatar">
                                 {user.avatar_url ? (

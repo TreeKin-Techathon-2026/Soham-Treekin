@@ -1,84 +1,58 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from typing import Optional
 from ..database import get_db
 from ..models.user import User
 from ..models.tree import Tree
+from ..services.leaderboard_service import (
+    get_planters_leaderboard,
+    get_adopters_leaderboard,
+    get_carbon_leaderboard,
+)
 
 router = APIRouter(prefix="/leaderboard", tags=["Leaderboard"])
 
 
-@router.get("/top-planters")
-def get_top_planters(
-    limit: int = 10,
-    db: Session = Depends(get_db)
+# ── New aggregation-based leaderboards ────────────────────────
+
+
+@router.get("/planters")
+def leaderboard_planters(
+    limit: int = Query(default=50, ge=1, le=200),
+    db: Session = Depends(get_db),
 ):
-    """Get users with most trees planted."""
-    users = db.query(User).filter(
-        User.is_active == True
-    ).order_by(User.trees_planted.desc()).limit(limit).all()
-    
-    return [
-        {
-            "rank": i + 1,
-            "user_id": u.id,
-            "username": u.username,
-            "display_name": u.display_name,
-            "avatar_url": u.avatar_url,
-            "trees_planted": u.trees_planted,
-            "is_verified": u.is_verified
-        }
-        for i, u in enumerate(users)
-    ]
+    """
+    Rank users by total trees planted.
+    Tie-break: most growth updates → earliest account creation.
+    """
+    return get_planters_leaderboard(db, limit)
 
 
-@router.get("/top-adopters")
-def get_top_adopters(
-    limit: int = 10,
-    db: Session = Depends(get_db)
+@router.get("/adopters")
+def leaderboard_adopters(
+    limit: int = Query(default=50, ge=1, le=200),
+    db: Session = Depends(get_db),
 ):
-    """Get users with most trees adopted."""
-    users = db.query(User).filter(
-        User.is_active == True
-    ).order_by(User.trees_adopted.desc()).limit(limit).all()
-    
-    return [
-        {
-            "rank": i + 1,
-            "user_id": u.id,
-            "username": u.username,
-            "display_name": u.display_name,
-            "avatar_url": u.avatar_url,
-            "trees_adopted": u.trees_adopted,
-            "is_verified": u.is_verified
-        }
-        for i, u in enumerate(users)
-    ]
+    """
+    Rank users by adoption engagement score.
+    Score = (trees_adopted * 10) + (credits_spent * 0.5)
+    """
+    return get_adopters_leaderboard(db, limit)
 
 
-@router.get("/top-carbon")
-def get_top_carbon_savers(
-    limit: int = 10,
-    db: Session = Depends(get_db)
+@router.get("/carbon")
+def leaderboard_carbon(
+    limit: int = Query(default=50, ge=1, le=200),
+    db: Session = Depends(get_db),
 ):
-    """Get users with most carbon saved."""
-    users = db.query(User).filter(
-        User.is_active == True
-    ).order_by(User.total_carbon_saved.desc()).limit(limit).all()
-    
-    return [
-        {
-            "rank": i + 1,
-            "user_id": u.id,
-            "username": u.username,
-            "display_name": u.display_name,
-            "avatar_url": u.avatar_url,
-            "total_carbon_saved": u.total_carbon_saved,
-            "is_verified": u.is_verified
-        }
-        for i, u in enumerate(users)
-    ]
+    """
+    Rank users by total carbon offset (kg CO2).
+    Per-tree: base_carbon + (growth_updates * growth_factor)
+    """
+    return get_carbon_leaderboard(db, limit)
+
+
+# ── Unchanged endpoints ──────────────────────────────────────
 
 
 @router.get("/top-tredits")

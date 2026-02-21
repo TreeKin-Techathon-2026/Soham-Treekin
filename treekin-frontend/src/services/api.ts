@@ -127,9 +127,9 @@ export const reportsAPI = {
 
 // Leaderboard API
 export const leaderboardAPI = {
-    getTopPlanters: (limit?: number) => api.get('/leaderboard/top-planters', { params: { limit } }),
-    getTopAdopters: (limit?: number) => api.get('/leaderboard/top-adopters', { params: { limit } }),
-    getTopCarbon: (limit?: number) => api.get('/leaderboard/top-carbon', { params: { limit } }),
+    getTopPlanters: (limit?: number) => api.get('/leaderboard/planters', { params: { limit } }),
+    getTopAdopters: (limit?: number) => api.get('/leaderboard/adopters', { params: { limit } }),
+    getTopCarbon: (limit?: number) => api.get('/leaderboard/carbon', { params: { limit } }),
     getTopTredits: (limit?: number) => api.get('/leaderboard/top-tredits', { params: { limit } }),
     getStats: () => api.get('/leaderboard/stats'),
 };
