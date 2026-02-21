@@ -67,6 +67,19 @@ class TreeResponse(TreeBase):
     images: Optional[List[Any]] = []
     created_at: datetime
 
+    @field_validator('images', mode='before')
+    @classmethod
+    def parse_images(cls, v):
+        if isinstance(v, str):
+            import json
+            try:
+                return json.loads(v)
+            except:
+                return []
+        if v is None:
+            return []
+        return v
+
     class Config:
         from_attributes = True
 
