@@ -77,9 +77,9 @@ class Tree(Base):
     # Relationships
     owner = relationship("User", foreign_keys=[owner_id])
     adopter = relationship("User", foreign_keys=[adopter_id])
-    posts = relationship("Post", back_populates="tree")
-    carbon_records = relationship("CarbonCredit", back_populates="tree")
-    events = relationship("TreeEvent", back_populates="tree")
+    posts = relationship("Post", back_populates="tree", cascade="all, delete-orphan")
+    carbon_records = relationship("CarbonCredit", back_populates="tree", cascade="all, delete-orphan")
+    events = relationship("TreeEvent", back_populates="tree", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<Tree {self.name}>"
@@ -91,7 +91,7 @@ class TreeEvent(Base):
     __tablename__ = "tree_events"
     
     id = Column(Integer, primary_key=True, index=True)
-    tree_id = Column(Integer, ForeignKey("trees.id"), nullable=False)
+    tree_id = Column(Integer, ForeignKey("trees.id", ondelete="CASCADE"), nullable=False)
     
     event_name = Column(String(200), nullable=False)
     event_description = Column(Text)

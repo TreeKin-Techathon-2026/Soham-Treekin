@@ -66,6 +66,7 @@ export const treesAPI = {
     get: (id: number) => api.get(`/trees/${id}`),
     create: (data: any) => api.post('/trees', data),
     update: (id: number, data: any) => api.put(`/trees/${id}`, data),
+    delete: (id: number) => api.delete(`/trees/${id}`),
     adopt: (treeId: number) => api.post('/trees/adopt', { tree_id: treeId }),
     getNearby: (lat: number, lng: number, radius?: number) =>
         api.get('/trees/nearby', { params: { lat, lng, radius_km: radius || 5 } }),

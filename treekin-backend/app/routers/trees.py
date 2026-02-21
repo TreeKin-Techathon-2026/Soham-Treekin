@@ -16,6 +16,8 @@ from ..schemas.tree import (
 from ..models.post import Post  # Import Post model
 from ..services.auth_utils import get_current_user
 from ..services.geo_utils import haversine_distance, extract_exif_gps, find_nearby_trees
+from ..services.ai_validator import validate_tree_photo
+from ..config import settings
 
 # Save uploads to frontend public folder so Vite serves them directly
 FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "..", "treekin-frontend", "public", "assets", "trees")
@@ -331,6 +333,17 @@ def add_tree_update(
                        f"Must be within 50m to verify you're near your tree."
             )
 
+    # AI Validation: Check if photo contains a tree/plant
+    ai_result = {"valid": True, "confidence": 0.0, "label": "skipped", "reason": "AI validation disabled"}
+    if settings.ai_validation_enabled:
+        ai_result = validate_tree_photo(file_path, hf_token=settings.hf_api_token or None)
+        if not ai_result["valid"]:
+            os.remove(file_path)
+            raise HTTPException(
+                status_code=400,
+                detail=f"Photo rejected: {ai_result['reason']}"
+            )
+
     image_url = f"/assets/trees/{current_user.username}/{unique_filename}"
 
     # Set as main image if tree has none
@@ -345,7 +358,10 @@ def add_tree_update(
         "uploaded_at": uploaded_at,
         "uploaded_by": current_user.id,
         "photo_lat": photo_lat,
-        "photo_lng": photo_lng
+        "photo_lng": photo_lng,
+        "ai_valid": ai_result.get("valid", True),
+        "ai_confidence": ai_result.get("confidence", 0.0),
+        "ai_label": ai_result.get("label", "")
     }
     current_images.append(new_entry)
     tree.images = current_images
@@ -418,6 +434,17 @@ def upload_tree_image(
                        f"Must be within 50m to verify you're near your tree."
             )
     
+    # AI Validation: Check if photo contains a tree/plant
+    ai_result = {"valid": True, "confidence": 0.0, "label": "skipped", "reason": "AI validation disabled"}
+    if settings.ai_validation_enabled:
+        ai_result = validate_tree_photo(file_path, hf_token=settings.hf_api_token or None)
+        if not ai_result["valid"]:
+            os.remove(file_path)
+            raise HTTPException(
+                status_code=400,
+                detail=f"Photo rejected: {ai_result['reason']}"
+            )
+    
     # Generate URL for the image (served by Vite from public/assets/trees/{username}/)
     image_url = f"/assets/trees/{current_user.username}/{unique_filename}"
     
@@ -432,7 +459,10 @@ def upload_tree_image(
         "latitude": photo_lat,
         "longitude": photo_lng,
         "uploaded_at": datetime.utcnow().isoformat(),
-        "uploaded_by": current_user.id
+        "uploaded_by": current_user.id,
+        "ai_valid": ai_result.get("valid", True),
+        "ai_confidence": ai_result.get("confidence", 0.0),
+        "ai_label": ai_result.get("label", "")
     })
     tree.images = current_images
     flag_modified(tree, "images")
@@ -466,4 +496,58 @@ def upload_tree_image(
         "image_url": image_url,
         "tree_id": tree_id,
         "total_images": len(current_images)
+    }
+
+
+@router.delete("/{tree_id}", status_code=status.HTTP_200_OK)
+def delete_tree(
+    tree_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a tree and all associated data (posts, events, images)."""
+    tree = db.query(Tree).filter(Tree.id == tree_id).first()
+    if not tree:
+        raise HTTPException(status_code=404, detail="Tree not found")
+
+    # Only the owner can delete
+    if tree.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the tree owner can delete this tree")
+
+    # Delete uploaded image files from disk
+    try:
+        images = tree.images or []
+        for img in images:
+            url = img.get("url", "") if isinstance(img, dict) else ""
+            if url:
+                # URL format: /assets/trees/{username}/{filename}
+                file_path = os.path.join(
+                    UPLOADS_DIR,
+                    current_user.username,
+                    os.path.basename(url)
+                )
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+
+        # Also delete main image if it's separate
+        if tree.main_image_url:
+            main_path = os.path.join(
+                UPLOADS_DIR,
+                current_user.username,
+                os.path.basename(tree.main_image_url)
+            )
+            if os.path.exists(main_path):
+                os.remove(main_path)
+    except Exception as e:
+        print(f"Warning: Failed to clean up some image files: {e}")
+
+    # Delete from database (cascade handles posts, events, carbon_records)
+    tree_name = tree.name
+    db.delete(tree)
+    db.commit()
+
+    return {
+        "success": True,
+        "message": f"Tree '{tree_name}' has been permanently deleted",
+        "tree_id": tree_id
     }

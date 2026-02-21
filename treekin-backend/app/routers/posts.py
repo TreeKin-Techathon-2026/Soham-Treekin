@@ -6,7 +6,7 @@ from ..models.user import User
 from ..models.tree import Tree
 from ..models.post import Post, Comment, Like
 from ..schemas.post import (
-    PostCreate, PostUpdate, PostResponse,
+    PostCreate, PostUpdate, PostResponse, TreeSummary,
     CommentCreate, CommentResponse, VerifyVoteRequest
 )
 from ..schemas.user import UserSummary
@@ -70,6 +70,11 @@ def list_posts(
         if user:
             post_response.user = UserSummary.model_validate(user)
         
+        # Add tree info
+        tree = db.query(Tree).filter(Tree.id == post.tree_id).first()
+        if tree:
+            post_response.tree = TreeSummary.model_validate(tree)
+        
         # Check if current user liked this post
         liked = db.query(Like).filter(
             Like.post_id == post.id,
@@ -97,6 +102,11 @@ def get_post(
     user = db.query(User).filter(User.id == post.user_id).first()
     if user:
         post_response.user = UserSummary.model_validate(user)
+    
+    # Add tree info
+    tree = db.query(Tree).filter(Tree.id == post.tree_id).first()
+    if tree:
+        post_response.tree = TreeSummary.model_validate(tree)
     
     liked = db.query(Like).filter(
         Like.post_id == post.id,

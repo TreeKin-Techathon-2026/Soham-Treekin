@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import {
     TreeDeciduous, Leaf, Award, Settings, ChevronRight, MapPin, Calendar,
     Link2, Heart, MessageCircle, Share2, Droplets, Bug, Edit2,
-    CheckCircle, Shield, Star, Trophy, Target, Zap, Plus, X, Upload, Image
+    CheckCircle, Shield, Star, Trophy, Target, Zap, Plus, X, Upload, Image, Trash2
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { treesAPI, carbonAPI, postsAPI } from '../../services/api';
@@ -83,6 +83,7 @@ export const ProfilePage: React.FC = () => {
     const [uploading, setUploading] = useState(false);
     const [uploadError, setUploadError] = useState('');
     const [showToast, setShowToast] = useState(false);
+    const [deleting, setDeleting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const loadProfileData = async () => {
@@ -220,6 +221,28 @@ export const ProfilePage: React.FC = () => {
         });
     };
 
+    const handleDeleteTree = async (treeId: number, treeName: string) => {
+        const confirmed = window.confirm(
+            `Are you sure you want to permanently delete "${treeName}"?\n\nThis will also delete all photos, posts, and carbon records associated with this tree. This action cannot be undone.`
+        );
+        if (!confirmed) return;
+
+        setDeleting(true);
+        try {
+            await treesAPI.delete(treeId);
+            const updatedTrees = myTrees.filter(t => t.id !== treeId);
+            setMyTrees(updatedTrees);
+            if (selectedTreeId === treeId) {
+                setSelectedTreeId(updatedTrees.length > 0 ? updatedTrees[0].id : null);
+                setTreeUpdates([]);
+            }
+        } catch (err: any) {
+            alert(err?.response?.data?.detail || 'Failed to delete tree');
+        } finally {
+            setDeleting(false);
+        }
+    };
+
     const unlockedAchievements = MOCK_ACHIEVEMENTS.filter(a => a.unlocked).length;
 
     // Derived state
@@ -347,13 +370,25 @@ export const ProfilePage: React.FC = () => {
                                 {/* Tree Selector Pills */}
                                 <div className="tree-selector-pills">
                                     {myTrees.map(tree => (
-                                        <button
-                                            key={tree.id}
-                                            className={`tree-pill ${selectedTreeId === tree.id ? 'active' : ''}`}
-                                            onClick={() => handleTreeSelect(tree.id)}
-                                        >
-                                            🌳 {tree.name}
-                                        </button>
+                                        <div key={tree.id} className="tree-pill-wrapper">
+                                            <button
+                                                className={`tree-pill ${selectedTreeId === tree.id ? 'active' : ''}`}
+                                                onClick={() => handleTreeSelect(tree.id)}
+                                            >
+                                                🌳 {tree.name}
+                                            </button>
+                                            <button
+                                                className="tree-delete-btn"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDeleteTree(tree.id, tree.name);
+                                                }}
+                                                disabled={deleting}
+                                                title={`Delete ${tree.name}`}
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
                                     ))}
                                 </div>
 

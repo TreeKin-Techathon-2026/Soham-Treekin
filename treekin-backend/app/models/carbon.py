@@ -19,7 +19,7 @@ class CarbonCredit(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    tree_id = Column(Integer, ForeignKey("trees.id"), nullable=False)
+    tree_id = Column(Integer, ForeignKey("trees.id", ondelete="CASCADE"), nullable=False)
     
     amount = Column(Float, nullable=False)  # In kg CO2
     tredits_value = Column(Float, nullable=False)  # TREDITS earned

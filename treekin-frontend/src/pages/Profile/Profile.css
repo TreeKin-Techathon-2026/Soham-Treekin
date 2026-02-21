@@ -1144,6 +1144,56 @@
     box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
 }
 
+.tree-pill-wrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    position: relative;
+}
+
+.tree-delete-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: #999;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    opacity: 0;
+    padding: 0;
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 400;
+}
+
+.tree-delete-btn::before {
+    display: none !important;
+}
+
+.tree-pill-wrapper:hover .tree-delete-btn {
+    opacity: 1;
+}
+
+.tree-delete-btn:hover {
+    background: #fee2e2;
+    color: #ef4444;
+    transform: none;
+    box-shadow: none;
+}
+
+.tree-delete-btn:active {
+    transform: scale(0.9);
+}
+
+.tree-delete-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
 /* Tree Updates Grid */
 .tree-updates-section {
     animation: updatesFadeIn 0.4s ease;

@@ -13,6 +13,10 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 1440  # 24 hours
     
+    # AI Validation
+    hf_api_token: str = ""  # Optional Hugging Face token for higher rate limits
+    ai_validation_enabled: bool = True  # Set to False to disable AI photo checks
+    
     # App
     app_name: str = "TreeKin"
     debug: bool = True

@@ -10,7 +10,7 @@ class Post(Base):
     __tablename__ = "posts"
     
     id = Column(Integer, primary_key=True, index=True)
-    tree_id = Column(Integer, ForeignKey("trees.id"), nullable=False)
+    tree_id = Column(Integer, ForeignKey("trees.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     
     content = Column(Text, nullable=False)
