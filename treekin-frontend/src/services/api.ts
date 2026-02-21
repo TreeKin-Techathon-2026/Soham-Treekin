@@ -56,6 +56,7 @@ export const usersAPI = {
     getUser: (id: number) => api.get(`/users/${id}`),
     updateProfile: (data: any) => api.put('/users/me', data),
     getStats: (id: number) => api.get(`/users/${id}/stats`),
+    getNGOs: () => api.get('/users/ngos'),
 };
 
 // Trees API
@@ -112,6 +113,9 @@ export const carbonAPI = {
     claim: (treeId: number) => api.post(`/carbon/claim/${treeId}`),
     getWallet: () => api.get('/carbon/wallet'),
     getHistory: () => api.get('/carbon/history'),
+    sponsorTree: (data: { ngo_id: number; tree_species: string; amount_paid: number }) =>
+        api.post('/carbon/sponsor', data),
+    getSponsoredTrees: () => api.get('/carbon/sponsored-trees'),
 };
 
 // Chat API

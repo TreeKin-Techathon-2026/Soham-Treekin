@@ -61,19 +61,6 @@
         radial-gradient(ellipse at 50% 80%, rgba(27, 94, 32, 0.3) 0%, transparent 40%);
 }
 
-.profile-cover-gradient::after {
-    content: '🌲🌳🌿🍃🌲🌳';
-    position: absolute;
-    bottom: 20px;
-    left: 0;
-    right: 0;
-    text-align: center;
-    font-size: 2.5rem;
-    letter-spacing: 20px;
-    opacity: 0.25;
-    filter: blur(1px);
-}
-
 /* ============================================
    PROFILE HEADER INFO
    ============================================ */
@@ -300,6 +287,258 @@
     margin: 0 0 20px;
     font-family: 'Outfit', sans-serif;
 }
+
+
+/* ============================================
+   TREDITS CARD - NEW FEATURE
+   ============================================ */
+.tredits-card {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid #a7f3d0;
+    overflow: hidden;
+    animation: slideUp 0.4s ease-out both;
+    box-shadow: 0 2px 12px rgba(5, 150, 105, 0.08);
+}
+
+.tredits-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 24px 20px;
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    color: white;
+}
+
+.tredits-header-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.tredits-icon-badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.tredits-card-header h2 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin: 0;
+    font-family: 'Outfit', sans-serif;
+    color: white;
+}
+
+.tredits-subtitle {
+    font-size: 0.82rem;
+    opacity: 0.85;
+    margin: 2px 0 0;
+}
+
+.tredits-total {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.tredits-total-number {
+    font-size: 2.2rem;
+    font-weight: 800;
+    font-family: 'Outfit', sans-serif;
+    line-height: 1;
+    letter-spacing: -0.02em;
+}
+
+.tredits-total-label {
+    font-size: 0.78rem;
+    opacity: 0.8;
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+/* Progress bar */
+.tredits-progress-section {
+    padding: 20px 24px 12px;
+}
+
+.tredits-progress-bar {
+    height: 10px;
+    background: #f1f5f3;
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+}
+
+.tredits-progress-fill {
+    height: 100%;
+    transition: width 1s ease-out;
+}
+
+.tredits-progress-fill.trees {
+    background: #059669;
+    border-radius: 10px 0 0 10px;
+}
+
+.tredits-progress-fill.co2 {
+    background: #d97706;
+}
+
+.tredits-progress-fill.water {
+    background: #2563eb;
+    border-radius: 0 10px 10px 0;
+}
+
+.tredits-legend {
+    display: flex;
+    gap: 16px;
+    margin-top: 10px;
+}
+
+.tredits-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.tredits-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.tredits-dot.trees {
+    background: #059669;
+}
+
+.tredits-dot.co2 {
+    background: #d97706;
+}
+
+.tredits-dot.water {
+    background: #2563eb;
+}
+
+.tredits-dot.o2 {
+    background: #10b981;
+}
+
+/* Breakdown cards */
+.tredits-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 0 24px;
+}
+
+.tredits-source-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.tredits-source-card:last-child {
+    border-bottom: none;
+}
+
+.tredits-source-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.tredits-source-icon.trees {
+    background: #ecfdf5;
+    color: #059669;
+}
+
+.tredits-source-icon.co2 {
+    background: #fffbeb;
+    color: #d97706;
+}
+
+.tredits-source-icon.water {
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+.tredits-source-icon.o2 {
+    background: #ecfdf5;
+    color: #10b981;
+}
+
+.tredits-source-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.tredits-source-label {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+.tredits-source-detail {
+    font-size: 0.75rem;
+    color: #9ca3af;
+}
+
+.tredits-source-value {
+    font-size: 1.1rem;
+    font-weight: 800;
+    font-family: 'Outfit', sans-serif;
+    flex-shrink: 0;
+}
+
+.tredits-source-value.trees {
+    color: #059669;
+}
+
+.tredits-source-value.co2 {
+    color: #d97706;
+}
+
+.tredits-source-value.water {
+    color: #2563eb;
+}
+
+.tredits-source-value.o2 {
+    color: #10b981;
+}
+
+.tredits-card-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 24px;
+    background: #ecfdf5;
+    color: #059669;
+    font-size: 0.82rem;
+    font-weight: 500;
+    border-top: 1px solid #d1fae5;
+}
+
 
 /* ============================================
    ENVIRONMENTAL IMPACT
@@ -543,8 +782,6 @@
     font-size: 0.9rem;
 }
 
-
-
 /* Tree Cards Grid - Instagram-style 3 columns */
 .trees-grid {
     display: grid;
@@ -568,7 +805,6 @@
     position: relative;
     width: 100%;
     padding-top: 100%;
-    /* 1:1 square aspect ratio */
     overflow: hidden;
 }
 
@@ -664,77 +900,6 @@
     font-size: 0.72rem;
     color: #6b7280;
     margin: 0;
-}
-
-.tree-card-desc {
-    font-size: 0.85rem;
-    color: #6b7280;
-    line-height: 1.5;
-    margin: 0 0 14px;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-.tree-card-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-top: 12px;
-    border-top: 1px solid #f3f4f6;
-}
-
-.tree-card-actions {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.tree-card-action {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    color: #6b7280;
-    font-size: 0.82rem;
-    cursor: pointer;
-    transition: color 0.2s;
-    background: none !important;
-    border: none !important;
-    padding: 0 !important;
-    border-radius: 0 !important;
-    text-transform: none !important;
-    letter-spacing: 0 !important;
-    font-weight: 400 !important;
-    width: auto !important;
-}
-
-.tree-card-action::before {
-    display: none !important;
-}
-
-.tree-card-action:hover {
-    color: #374151;
-    transform: none !important;
-    box-shadow: none !important;
-}
-
-.tree-card-action svg {
-    width: 16px;
-    height: 16px;
-}
-
-.tree-card-co2 {
-    display: inline-flex;
-    align-items: center;
-    padding: 4px 10px;
-    background: #ecfdf5;
-    color: #059669;
-    border: 1px solid #a7f3d0;
-    border-radius: 20px;
-    font-size: 0.72rem;
-    font-weight: 700;
 }
 
 /* ============================================
@@ -1042,6 +1207,16 @@
     .profile-settings {
         padding: 0 16px 24px;
     }
+
+    .tredits-card-header {
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
+    }
+
+    .tredits-total {
+        align-items: flex-start;
+    }
 }
 
 @media (max-width: 640px) {
@@ -1078,6 +1253,10 @@
     .profile-meta-row {
         gap: 12px;
     }
+
+    .tredits-total-number {
+        font-size: 1.8rem;
+    }
 }
 
 /* Animation keyframes */
@@ -1103,8 +1282,6 @@
     }
 }
 
-
-
 /* Tree Selector Pills */
 .tree-selector-pills {
     display: flex;
@@ -1113,12 +1290,10 @@
     padding-bottom: 5px;
     margin-bottom: 20px;
     scrollbar-width: none;
-    /* Firefox */
 }
 
 .tree-selector-pills::-webkit-scrollbar {
     display: none;
-    /* Chrome/Safari */
 }
 
 .tree-pill {
@@ -1144,54 +1319,89 @@
     box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
 }
 
+/* Tree Pill Wrapper (pill + delete button) */
 .tree-pill-wrapper {
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 0;
     position: relative;
 }
 
-.tree-delete-btn {
+.tree-pill-delete {
+    background: transparent;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    border: none;
-    background: transparent;
-    color: #999;
-    cursor: pointer;
-    transition: all 0.2s ease;
     opacity: 0;
-    padding: 0;
-    text-transform: none;
-    letter-spacing: 0;
-    font-weight: 400;
+    transition: all 0.2s ease;
+    margin-left: -4px;
 }
 
-.tree-delete-btn::before {
-    display: none !important;
-}
-
-.tree-pill-wrapper:hover .tree-delete-btn {
+.tree-pill-wrapper:hover .tree-pill-delete {
     opacity: 1;
 }
 
-.tree-delete-btn:hover {
+.tree-pill-delete:hover {
     background: #fee2e2;
     color: #ef4444;
-    transform: none;
-    box-shadow: none;
 }
 
-.tree-delete-btn:active {
-    transform: scale(0.9);
+/* Delete Confirmation Modal */
+.delete-confirm-modal {
+    max-width: 420px !important;
 }
 
-.tree-delete-btn:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
+.delete-confirm-body {
+    text-align: center;
+    padding: 20px 10px !important;
+}
+
+.delete-confirm-icon {
+    color: #ef4444;
+    margin-bottom: 12px;
+    animation: deleteShake 0.4s ease;
+}
+
+@keyframes deleteShake {
+
+    0%,
+    100% {
+        transform: rotate(0deg);
+    }
+
+    25% {
+        transform: rotate(-8deg);
+    }
+
+    75% {
+        transform: rotate(8deg);
+    }
+}
+
+.delete-confirm-body p {
+    margin-bottom: 8px;
+    font-size: 1rem;
+    color: #333;
+}
+
+.delete-confirm-warning {
+    font-size: 0.85rem !important;
+    color: #999 !important;
+    line-height: 1.4;
+}
+
+.delete-confirm-btn {
+    background: #ef4444 !important;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3) !important;
+}
+
+.delete-confirm-btn:hover {
+    background: #dc2626 !important;
 }
 
 /* Tree Updates Grid */

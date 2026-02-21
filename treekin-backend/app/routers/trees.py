@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
+from sqlalchemy import func as sa_func
 from typing import List, Optional
 from datetime import datetime
 import os
@@ -9,6 +10,7 @@ from ..database import get_db
 from sqlalchemy.orm.attributes import flag_modified
 from ..models.user import User
 from ..models.tree import Tree, TreeEvent
+from ..models.carbon import CarbonCredit, TreditTransaction
 from ..schemas.tree import (
     TreeCreate, TreeUpdate, TreeResponse,
     TreeAdoptRequest, TreeEventCreate, TreeEventResponse
@@ -60,8 +62,26 @@ def create_tree(
         # Update user stats
         current_user.trees_planted += 1
         
+        # Grant +50 Tredits planting bonus
+        PLANTING_BONUS = 50.0
+        current_user.tredits_balance += PLANTING_BONUS
+        bonus_tx = TreditTransaction(
+            user_id=current_user.id,
+            transaction_type="earned",
+            amount=PLANTING_BONUS,
+            balance_after=current_user.tredits_balance,
+            description=f"Planting bonus for tree '{tree_data.name}'",
+            reference_id=f"plant_bonus"
+        )
+        db.add(bonus_tx)
+        
         db.commit()
         db.refresh(tree)
+        
+        # Update the reference_id with actual tree id
+        bonus_tx.reference_id = f"plant_bonus_{tree.id}"
+        db.commit()
+        
         return tree
     except Exception as e:
         import traceback
@@ -541,6 +561,42 @@ def delete_tree(
     except Exception as e:
         print(f"Warning: Failed to clean up some image files: {e}")
 
+    # --- Tredits deduction on delete ---
+    PLANTING_BONUS = 50.0
+    total_deduction = PLANTING_BONUS
+
+    # Sum up any claimed carbon credits (Tredits) for this tree
+    claimed_tredits = db.query(sa_func.coalesce(sa_func.sum(CarbonCredit.tredits_value), 0.0)).filter(
+        CarbonCredit.tree_id == tree_id,
+        CarbonCredit.user_id == current_user.id
+    ).scalar()
+    total_deduction += float(claimed_tredits)
+
+    # Also sum CO2 claimed from this tree
+    claimed_co2 = db.query(sa_func.coalesce(sa_func.sum(CarbonCredit.amount), 0.0)).filter(
+        CarbonCredit.tree_id == tree_id,
+        CarbonCredit.user_id == current_user.id
+    ).scalar()
+
+    # Deduct from user wallet (floor at 0)
+    current_user.tredits_balance = max(0.0, current_user.tredits_balance - total_deduction)
+    current_user.total_carbon_saved = max(0.0, current_user.total_carbon_saved - float(claimed_co2))
+
+    # Decrement trees_planted
+    if current_user.trees_planted > 0:
+        current_user.trees_planted -= 1
+
+    # Create audit TreditTransaction
+    deduction_tx = TreditTransaction(
+        user_id=current_user.id,
+        transaction_type="spent",
+        amount=-total_deduction,
+        balance_after=current_user.tredits_balance,
+        description=f"Tree '{tree.name}' deleted (bonus: -{PLANTING_BONUS}, carbon credits: -{float(claimed_tredits):.1f})",
+        reference_id=f"delete_tree_{tree_id}"
+    )
+    db.add(deduction_tx)
+
     # Delete from database (cascade handles posts, events, carbon_records)
     tree_name = tree.name
     db.delete(tree)
@@ -549,5 +605,7 @@ def delete_tree(
     return {
         "success": True,
         "message": f"Tree '{tree_name}' has been permanently deleted",
-        "tree_id": tree_id
+        "tree_id": tree_id,
+        "tredits_deducted": total_deduction,
+        "co2_deducted": float(claimed_co2)
     }

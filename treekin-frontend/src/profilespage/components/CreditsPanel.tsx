@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import type { ProfilePageResponse } from "../api/types";
 import { profilesPageApi } from "../api/profilesPageApi";
+import { calculateTredits, calculateTotalKgFromTrees, formatTredits, TREDITS_PER_TREE } from "../../lib/tredits";
 
 export default function CreditsPanel({
   data,
@@ -44,6 +45,14 @@ export default function CreditsPanel({
   const carbonTotal = data.credits.filter(c => c.creditType === 'CARBON').reduce((s, c) => s + c.amount, 0);
   const treditTotal = data.credits.filter(c => c.creditType === 'TREDIT').reduce((s, c) => s + c.amount, 0);
 
+  // Calculate tredits from tree data
+  const treeDates = useMemo(() => data.trees.map(t => t.createdAt), [data.trees]);
+  const treditsBreakdown = useMemo(
+    () => calculateTredits(data.trees.length, treeDates),
+    [data.trees.length, treeDates]
+  );
+  const o2ReleasedKg = useMemo(() => calculateTotalKgFromTrees(treeDates), [treeDates]);
+
   return (
     <div className="credits-panel">
       {err && <div className="error-msg">{err}</div>}
@@ -59,20 +68,52 @@ export default function CreditsPanel({
         </button>
       </div>
 
-      {/* Stats Cards */}
+      {/* Tredits Breakdown */}
       <div className="stats-row">
+        <div className="stat-card tredit">
+          <span className="stat-icon">💰</span>
+          <div className="stat-info">
+            <span className="stat-value">{formatTredits(treditsBreakdown.total)}</span>
+            <span className="stat-label">Total Tredits</span>
+          </div>
+        </div>
+        <div className="stat-card carbon">
+          <span className="stat-icon">🌳</span>
+          <div className="stat-info">
+            <span className="stat-value">+{formatTredits(treditsBreakdown.fromTrees)}</span>
+            <span className="stat-label">{data.trees.length} Trees x {TREDITS_PER_TREE}</span>
+          </div>
+        </div>
+      </div>
+      <div className="stats-row" style={{ marginTop: '-8px' }}>
+        <div className="stat-card carbon">
+          <span className="stat-icon">🍃</span>
+          <div className="stat-info">
+            <span className="stat-value">{treditsBreakdown.co2AbsorbedKg}kg</span>
+            <span className="stat-label">CO2 Absorbed</span>
+          </div>
+        </div>
+        <div className="stat-card carbon">
+          <span className="stat-icon">💧</span>
+          <div className="stat-info">
+            <span className="stat-value">{treditsBreakdown.waterFilteredKg}kg</span>
+            <span className="stat-label">Water Filtered</span>
+          </div>
+        </div>
+      </div>
+      <div className="stats-row" style={{ marginTop: '-8px' }}>
+        <div className="stat-card carbon">
+          <span className="stat-icon">🌬️</span>
+          <div className="stat-info">
+            <span className="stat-value">{o2ReleasedKg}kg</span>
+            <span className="stat-label">O2 Released</span>
+          </div>
+        </div>
         <div className="stat-card carbon">
           <span className="stat-icon">🍃</span>
           <div className="stat-info">
             <span className="stat-value">{carbonTotal}</span>
-            <span className="stat-label">Carbon</span>
-          </div>
-        </div>
-        <div className="stat-card tredit">
-          <span className="stat-icon">💰</span>
-          <div className="stat-info">
-            <span className="stat-value">{treditTotal}</span>
-            <span className="stat-label">Tredits</span>
+            <span className="stat-label">Carbon Credits</span>
           </div>
         </div>
       </div>

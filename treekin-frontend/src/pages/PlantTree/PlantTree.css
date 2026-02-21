@@ -300,3 +300,171 @@
 .btn-group button {
     flex: 1;
 }
+
+/* ============================================
+   Camera Modal
+   ============================================ */
+.camera-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    animation: camFadeIn 0.25s ease;
+}
+
+@keyframes camFadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.camera-modal {
+    background: #111;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 560px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    animation: camSlideUp 0.3s ease;
+}
+
+@keyframes camSlideUp {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.camera-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    color: white;
+}
+
+.camera-modal-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.camera-close-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.camera-close-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Viewfinder */
+.camera-viewfinder {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background: #000;
+    overflow: hidden;
+}
+
+.camera-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Loading / Error inside viewfinder */
+.camera-loading,
+.camera-error {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.camera-error p {
+    max-width: 280px;
+    text-align: center;
+    line-height: 1.4;
+    margin: 0;
+}
+
+/* Capture Controls */
+.camera-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: #111;
+}
+
+.camera-capture-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: transform 0.15s ease;
+}
+
+.camera-capture-btn:hover {
+    transform: scale(1.05);
+}
+
+.camera-capture-btn:active {
+    transform: scale(0.92);
+}
+
+.capture-ring {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    border: 4px solid white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.2s;
+}
+
+.camera-capture-btn:hover .capture-ring {
+    border-color: #4ade80;
+}
+
+.capture-dot {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: white;
+    transition: background 0.2s;
+}
+
+.camera-capture-btn:hover .capture-dot {
+    background: #4ade80;
+}

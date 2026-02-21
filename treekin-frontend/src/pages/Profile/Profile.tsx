@@ -1,11 +1,22 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import {
     TreeDeciduous, Leaf, Award, Settings, ChevronRight, MapPin, Calendar,
     Link2, Heart, MessageCircle, Share2, Droplets, Bug, Edit2,
-    CheckCircle, Shield, Star, Trophy, Target, Zap, Plus, X, Upload, Image, Trash2
+    CheckCircle, Shield, Star, Trophy, Target, Zap, Plus, X, Upload, Image,
+    Coins, TrendingUp, Sparkles, Trash2
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { treesAPI, carbonAPI, postsAPI } from '../../services/api';
+import {
+    calculateTredits,
+    formatTredits,
+    TREDITS_PER_TREE,
+    TREDITS_PER_10KG_CO2,
+    CO2_KG_PER_UNIT,
+    TREDITS_PER_10KG_WATER,
+    WATER_KG_PER_UNIT,
+    type TreditsBreakdown
+} from '../../lib/tredits';
 import './Profile.css';
 
 // Backend URL for images
@@ -50,7 +61,7 @@ interface TreeUpdateData {
 const MOCK_ACHIEVEMENTS = [
     { id: 1, name: 'First Roots', desc: 'Planted your first tree', date: 'Mar 2023', icon: '🌱', color: 'green', unlocked: true },
     { id: 2, name: 'Forest Guardian', desc: 'Planted 10+ trees', date: 'Jan 2024', icon: '🛡️', color: 'red', unlocked: true },
-    { id: 3, name: 'Carbon Champion', desc: 'Offset 500kg CO2', date: 'Nov 2023', icon: '🏅', color: 'amber', unlocked: true },
+    { id: 3, name: 'Carbon Champion', desc: 'Offset 0.1kg CO2', date: 'Nov 2023', icon: '🏅', color: 'amber', unlocked: true },
     { id: 4, name: 'Storyteller', desc: 'Share 5 tree stories', date: 'Dec 2023', icon: '⭐', color: 'purple', unlocked: true },
     { id: 5, name: 'Legacy Builder', desc: 'Plant 25 trees', icon: '🏆', color: 'teal', unlocked: false, progress: 48 },
     { id: 6, name: 'Eco Warrior', desc: 'Offset 1 ton CO2', icon: '🌍', color: 'blue', unlocked: false, progress: 85 },
@@ -63,6 +74,27 @@ const MOCK_ACTIVITY = [
     { id: 4, type: 'achievement', text: 'Earned achievement', sub: 'Forest Guardian', time: '1 week ago', iconColor: 'amber' },
     { id: 5, type: 'follow', text: 'Maria Garcia Started following you', sub: '', time: '1 week ago', iconColor: 'purple', avatar: '👩‍🦰' },
 ];
+
+// Animated counter hook
+function useAnimatedCounter(target: number, duration: number = 1200) {
+    const [count, setCount] = useState(0);
+    useEffect(() => {
+        if (target === 0) { setCount(0); return; }
+        let start = 0;
+        const increment = target / (duration / 16);
+        const timer = setInterval(() => {
+            start += increment;
+            if (start >= target) {
+                setCount(target);
+                clearInterval(timer);
+            } else {
+                setCount(Math.floor(start));
+            }
+        }, 16);
+        return () => clearInterval(timer);
+    }, [target, duration]);
+    return count;
+}
 
 export const ProfilePage: React.FC = () => {
     const { user, logout } = useAuthStore();
@@ -83,8 +115,12 @@ export const ProfilePage: React.FC = () => {
     const [uploading, setUploading] = useState(false);
     const [uploadError, setUploadError] = useState('');
     const [showToast, setShowToast] = useState(false);
-    const [deleting, setDeleting] = useState(false);
+    const [toastMessage, setToastMessage] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Delete tree state
+    const [deleteConfirmTree, setDeleteConfirmTree] = useState<TreeData | null>(null);
+    const [deleting, setDeleting] = useState(false);
 
     const loadProfileData = async () => {
         if (!user) return;
@@ -199,16 +235,39 @@ export const ProfilePage: React.FC = () => {
             await treesAPI.addTreeUpdate(selectedTreeId, uploadFile, uploadCaption || undefined, uploadDate);
             setShowAddModal(false);
             resetModal();
-            // Refresh updates for selected tree
             await fetchUpdates(selectedTreeId);
             setFadeKey(prev => prev + 1);
-            // Show success toast
+            setToastMessage('Growth update added 🌱');
             setShowToast(true);
             setTimeout(() => setShowToast(false), 3000);
         } catch (err: any) {
             setUploadError(err.response?.data?.detail || 'Failed to upload update');
         } finally {
             setUploading(false);
+        }
+    };
+
+    // --- Delete tree handler ---
+    const handleDeleteTree = async () => {
+        if (!deleteConfirmTree) return;
+        setDeleting(true);
+        try {
+            await treesAPI.delete(deleteConfirmTree.id);
+            setDeleteConfirmTree(null);
+            // If the deleted tree was selected, clear selection
+            if (selectedTreeId === deleteConfirmTree.id) {
+                setSelectedTreeId(null);
+                setTreeUpdates([]);
+            }
+            // Refresh all profile data
+            await loadProfileData();
+            setToastMessage(`Tree '${deleteConfirmTree.name}' deleted`);
+            setShowToast(true);
+            setTimeout(() => setShowToast(false), 3000);
+        } catch (err: any) {
+            alert(err.response?.data?.detail || 'Failed to delete tree');
+        } finally {
+            setDeleting(false);
         }
     };
 
@@ -221,35 +280,28 @@ export const ProfilePage: React.FC = () => {
         });
     };
 
-    const handleDeleteTree = async (treeId: number, treeName: string) => {
-        const confirmed = window.confirm(
-            `Are you sure you want to permanently delete "${treeName}"?\n\nThis will also delete all photos, posts, and carbon records associated with this tree. This action cannot be undone.`
-        );
-        if (!confirmed) return;
-
-        setDeleting(true);
-        try {
-            await treesAPI.delete(treeId);
-            const updatedTrees = myTrees.filter(t => t.id !== treeId);
-            setMyTrees(updatedTrees);
-            if (selectedTreeId === treeId) {
-                setSelectedTreeId(updatedTrees.length > 0 ? updatedTrees[0].id : null);
-                setTreeUpdates([]);
-            }
-        } catch (err: any) {
-            alert(err?.response?.data?.detail || 'Failed to delete tree');
-        } finally {
-            setDeleting(false);
-        }
-    };
-
     const unlockedAchievements = MOCK_ACHIEVEMENTS.filter(a => a.unlocked).length;
 
     // Derived state
-    const treesCount = myTrees.length || user?.trees_planted || 0;
-    const co2Saved = user?.total_carbon_saved || 0;
+    const treesCount = myTrees.length;
     const joinedDate = (user as any)?.created_at ? new Date((user as any).created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : '2023';
     const displayName = user?.display_name || user?.username || 'Eco Warrior';
+
+    // Collect all tree planted dates for CO2/Water/O2 calculation
+    const treeDates = useMemo(() => myTrees.map(t => t.created_at), [myTrees]);
+
+    // ============================================
+    // TREDITS CALCULATION
+    // Uses tree planted dates to calculate CO2 absorbed, water filtered, O2 released
+    // Each tree: 1kg CO2/Water/O2 per 7 days of age
+    // ============================================
+    const treditsBreakdown: TreditsBreakdown = useMemo(
+        () => calculateTredits(treesCount, treeDates),
+        [treesCount, treeDates]
+    );
+
+    // Animated counter for total tredits
+    const animatedTotal = useAnimatedCounter(treditsBreakdown.total);
 
     return (
         <div className="profile-page-wrapper">
@@ -318,11 +370,117 @@ export const ProfilePage: React.FC = () => {
 
                 {/* Stacked Content - Single Column */}
                 <div className="profile-content">
+
+                    {/* ============================================
+                        TREDITS CARD - NEW FEATURE
+                        ============================================ */}
+                    <div className="tredits-card">
+                        <div className="tredits-card-header">
+                            <div className="tredits-header-left">
+                                <div className="tredits-icon-badge">
+                                    <Coins size={22} />
+                                </div>
+                                <div>
+                                    <h2>Your Tredits</h2>
+                                    <p className="tredits-subtitle">Earn rewards for your eco impact</p>
+                                </div>
+                            </div>
+                            <div className="tredits-total">
+                                <span className="tredits-total-number">{formatTredits(animatedTotal)}</span>
+                                <span className="tredits-total-label">Total Tredits</span>
+                            </div>
+                        </div>
+
+                        {/* Progress bar showing breakdown */}
+                        <div className="tredits-progress-section">
+                            <div className="tredits-progress-bar">
+                                {treditsBreakdown.total > 0 && (
+                                    <>
+                                        <div
+                                            className="tredits-progress-fill trees"
+                                            style={{ width: `${(treditsBreakdown.fromTrees / treditsBreakdown.total) * 100}%` }}
+                                        />
+                                        <div
+                                            className="tredits-progress-fill co2"
+                                            style={{ width: `${(treditsBreakdown.fromCO2 / treditsBreakdown.total) * 100}%` }}
+                                        />
+                                        <div
+                                            className="tredits-progress-fill water"
+                                            style={{ width: `${(treditsBreakdown.fromWater / treditsBreakdown.total) * 100}%` }}
+                                        />
+                                    </>
+                                )}
+                            </div>
+                            <div className="tredits-legend">
+                                <span className="tredits-legend-item">
+                                    <span className="tredits-dot trees" />Trees
+                                </span>
+                                <span className="tredits-legend-item">
+                                    <span className="tredits-dot co2" />CO2
+                                </span>
+                                <span className="tredits-legend-item">
+                                    <span className="tredits-dot water" />Water
+                                </span>
+                                <span className="tredits-legend-item">
+                                    <span className="tredits-dot o2" />O2
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Breakdown cards */}
+                        <div className="tredits-breakdown">
+                            <div className="tredits-source-card">
+                                <div className="tredits-source-icon trees">
+                                    <TreeDeciduous size={18} />
+                                </div>
+                                <div className="tredits-source-info">
+                                    <span className="tredits-source-label">Trees Planted</span>
+                                    <span className="tredits-source-detail">{treditsBreakdown.treesPlanted} trees x {TREDITS_PER_TREE} tredits</span>
+                                </div>
+                                <span className="tredits-source-value trees">+{formatTredits(treditsBreakdown.fromTrees)}</span>
+                            </div>
+                            <div className="tredits-source-card">
+                                <div className="tredits-source-icon co2">
+                                    <Zap size={18} />
+                                </div>
+                                <div className="tredits-source-info">
+                                    <span className="tredits-source-label">CO2 Absorbed</span>
+                                    <span className="tredits-source-detail">{treditsBreakdown.co2AbsorbedKg}kg total (1kg/tree/7days) &middot; {Math.floor(treditsBreakdown.co2AbsorbedKg / CO2_KG_PER_UNIT)} x {CO2_KG_PER_UNIT}kg = {TREDITS_PER_10KG_CO2} tredits each</span>
+                                </div>
+                                <span className="tredits-source-value co2">+{formatTredits(treditsBreakdown.fromCO2)}</span>
+                            </div>
+                            <div className="tredits-source-card">
+                                <div className="tredits-source-icon water">
+                                    <Droplets size={18} />
+                                </div>
+                                <div className="tredits-source-info">
+                                    <span className="tredits-source-label">Water Filtered</span>
+                                    <span className="tredits-source-detail">{treditsBreakdown.waterFilteredKg}kg total (1kg/tree/7days) &middot; {Math.floor(treditsBreakdown.waterFilteredKg / WATER_KG_PER_UNIT)} x {WATER_KG_PER_UNIT}kg = {TREDITS_PER_10KG_WATER} tredits each</span>
+                                </div>
+                                <span className="tredits-source-value water">+{formatTredits(treditsBreakdown.fromWater)}</span>
+                            </div>
+                            <div className="tredits-source-card">
+                                <div className="tredits-source-icon o2">
+                                    <Leaf size={18} />
+                                </div>
+                                <div className="tredits-source-info">
+                                    <span className="tredits-source-label">O2 Released</span>
+                                    <span className="tredits-source-detail">{treditsBreakdown.o2ReleasedKg}kg total (1kg/tree/7days) &middot; Tracked impact</span>
+                                </div>
+                                <span className="tredits-source-value o2">{treditsBreakdown.o2ReleasedKg}kg</span>
+                            </div>
+                        </div>
+
+                        <div className="tredits-card-footer">
+                            <Sparkles size={14} />
+                            <span>Keep planting & caring for nature to earn more Tredits!</span>
+                        </div>
+                    </div>
+
                     {/* Environmental Impact - Full Width */}
                     <div className="profile-section-card">
                         <h2>Environmental Impact</h2>
                         <div className="impact-grid">
-                            {/* ... Impact cards ... */}
                             <div className="impact-card">
                                 <div className="impact-card-icon green">
                                     <TreeDeciduous size={20} />
@@ -335,25 +493,25 @@ export const ProfilePage: React.FC = () => {
                                 <div className="impact-card-icon amber">
                                     <Zap size={20} />
                                 </div>
-                                <div className="impact-card-value amber">{co2Saved > 0 ? `${co2Saved.toFixed(0)}kg` : '847kg'}</div>
+                                <div className="impact-card-value amber">{treditsBreakdown.co2AbsorbedKg}kg</div>
                                 <div className="impact-card-label">CO2 Absorbed</div>
-                                <div className="impact-card-sub">+124kg this year</div>
+                                <div className="impact-card-sub">1kg per tree every 7 days</div>
                             </div>
                             <div className="impact-card">
                                 <div className="impact-card-icon blue">
                                     <Droplets size={20} />
                                 </div>
-                                <div className="impact-card-value blue">12.4k</div>
+                                <div className="impact-card-value blue">{treditsBreakdown.waterFilteredKg}kg</div>
                                 <div className="impact-card-label">Water Filtered</div>
-                                <div className="impact-card-sub">Liters annually</div>
+                                <div className="impact-card-sub">1kg per tree every 7 days</div>
                             </div>
                             <div className="impact-card">
                                 <div className="impact-card-icon purple">
-                                    <Bug size={20} />
+                                    <Leaf size={20} />
                                 </div>
-                                <div className="impact-card-value purple">6</div>
-                                <div className="impact-card-label">Species Supported</div>
-                                <div className="impact-card-sub">Tree varieties</div>
+                                <div className="impact-card-value purple">{treditsBreakdown.o2ReleasedKg}kg</div>
+                                <div className="impact-card-label">O2 Released</div>
+                                <div className="impact-card-sub">1kg per tree every 7 days</div>
                             </div>
                         </div>
                     </div>
@@ -378,12 +536,8 @@ export const ProfilePage: React.FC = () => {
                                                 🌳 {tree.name}
                                             </button>
                                             <button
-                                                className="tree-delete-btn"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleDeleteTree(tree.id, tree.name);
-                                                }}
-                                                disabled={deleting}
+                                                className="tree-pill-delete"
+                                                onClick={(e) => { e.stopPropagation(); setDeleteConfirmTree(tree); }}
                                                 title={`Delete ${tree.name}`}
                                             >
                                                 <Trash2 size={14} />
@@ -648,10 +802,47 @@ export const ProfilePage: React.FC = () => {
                 </div>
             )}
 
+            {/* Delete Confirmation Modal */}
+            {deleteConfirmTree && (
+                <div className="growth-modal-overlay" onClick={() => !deleting && setDeleteConfirmTree(null)}>
+                    <div className="growth-modal delete-confirm-modal" onClick={e => e.stopPropagation()}>
+                        <div className="growth-modal-header">
+                            <h3>Delete Tree</h3>
+                            <button className="growth-modal-close" onClick={() => setDeleteConfirmTree(null)} disabled={deleting}>
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="growth-modal-body delete-confirm-body">
+                            <div className="delete-confirm-icon">
+                                <Trash2 size={40} />
+                            </div>
+                            <p>Are you sure you want to permanently delete <strong>{deleteConfirmTree.name}</strong>?</p>
+                            <p className="delete-confirm-warning">This will remove all growth updates, posts, carbon credits, and deduct Tredits associated with this tree. This action cannot be undone.</p>
+                        </div>
+                        <div className="growth-modal-footer">
+                            <button className="growth-modal-cancel" onClick={() => setDeleteConfirmTree(null)} disabled={deleting}>
+                                Cancel
+                            </button>
+                            <button
+                                className="growth-modal-submit delete-confirm-btn"
+                                onClick={handleDeleteTree}
+                                disabled={deleting}
+                            >
+                                {deleting ? (
+                                    <><div className="loading-spinner-small" /> Deleting...</>
+                                ) : (
+                                    <><Trash2 size={16} /> Delete Permanently</>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Success Toast */}
             {showToast && (
                 <div className="growth-toast">
-                    Growth update added 🌱
+                    {toastMessage || 'Growth update added 🌱'}
                 </div>
             )}
         </div>

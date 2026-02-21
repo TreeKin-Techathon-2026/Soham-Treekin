@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Camera, Image, TreeDeciduous, X, Loader2 } from 'lucide-react';
 import { Button, Input, Textarea, Card } from '../../components/common';
@@ -22,6 +22,14 @@ export const PlantTreePage: React.FC = () => {
     const [gettingLocation, setGettingLocation] = useState(false);
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+    // Camera state
+    const [showCamera, setShowCamera] = useState(false);
+    const [cameraReady, setCameraReady] = useState(false);
+    const [cameraError, setCameraError] = useState('');
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const streamRef = useRef<MediaStream | null>(null);
     const [formData, setFormData] = useState({
         name: '',
         species: '',
@@ -93,6 +101,72 @@ export const PlantTreePage: React.FC = () => {
             fileInputRef.current.value = '';
         }
     };
+
+    // --- Camera functions ---
+    const startCamera = useCallback(async () => {
+        setCameraError('');
+        setCameraReady(false);
+        setShowCamera(true);
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+                audio: false,
+            });
+            streamRef.current = stream;
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+                videoRef.current.onloadedmetadata = () => {
+                    videoRef.current?.play();
+                    setCameraReady(true);
+                };
+            }
+        } catch (err: any) {
+            console.error('Camera error:', err);
+            setCameraError(err.name === 'NotAllowedError'
+                ? 'Camera access denied. Please allow camera permissions in your browser.'
+                : 'Could not access camera. Make sure no other app is using it.');
+        }
+    }, []);
+
+    const stopCamera = useCallback(() => {
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(t => t.stop());
+            streamRef.current = null;
+        }
+        setShowCamera(false);
+        setCameraReady(false);
+        setCameraError('');
+    }, []);
+
+    const capturePhoto = useCallback(() => {
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        if (!video || !canvas) return;
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        ctx.drawImage(video, 0, 0);
+
+        canvas.toBlob((blob) => {
+            if (blob) {
+                const file = new File([blob], `tree_photo_${Date.now()}.jpg`, { type: 'image/jpeg' });
+                setSelectedImage(file);
+                setImagePreview(canvas.toDataURL('image/jpeg', 0.9));
+                stopCamera();
+            }
+        }, 'image/jpeg', 0.9);
+    }, [stopCamera]);
+
+    // Cleanup camera on unmount
+    useEffect(() => {
+        return () => {
+            if (streamRef.current) {
+                streamRef.current.getTracks().forEach(t => t.stop());
+            }
+        };
+    }, []);
 
     const handleSubmit = async () => {
         if (!formData.name) {
@@ -223,12 +297,7 @@ export const PlantTreePage: React.FC = () => {
                             <Button
                                 variant="outline"
                                 className="photo-btn"
-                                onClick={() => {
-                                    if (fileInputRef.current) {
-                                        fileInputRef.current.capture = 'environment';
-                                        fileInputRef.current.click();
-                                    }
-                                }}
+                                onClick={startCamera}
                             >
                                 <Camera size={24} />
                                 <span>Take Photo</span>
@@ -261,6 +330,52 @@ export const PlantTreePage: React.FC = () => {
                         <Button onClick={() => setStep(4)}>
                             {imagePreview ? 'Continue' : 'Skip Photo'}
                         </Button>
+                    </div>
+                </div>
+            )}
+
+            {/* Camera Modal */}
+            {showCamera && (
+                <div className="camera-modal-overlay">
+                    <div className="camera-modal">
+                        <div className="camera-modal-header">
+                            <h3>📷 Take a Photo</h3>
+                            <button className="camera-close-btn" onClick={stopCamera}>
+                                <X size={22} />
+                            </button>
+                        </div>
+                        <div className="camera-viewfinder">
+                            <video
+                                ref={videoRef}
+                                autoPlay
+                                playsInline
+                                muted
+                                className="camera-video"
+                            />
+                            <canvas ref={canvasRef} style={{ display: 'none' }} />
+                            {!cameraReady && !cameraError && (
+                                <div className="camera-loading">
+                                    <Loader2 size={32} className="spin" />
+                                    <span>Activating camera...</span>
+                                </div>
+                            )}
+                            {cameraError && (
+                                <div className="camera-error">
+                                    <Camera size={32} />
+                                    <p>{cameraError}</p>
+                                    <Button variant="outline" onClick={stopCamera}>Close</Button>
+                                </div>
+                            )}
+                        </div>
+                        {cameraReady && (
+                            <div className="camera-controls">
+                                <button className="camera-capture-btn" onClick={capturePhoto} title="Capture">
+                                    <div className="capture-ring">
+                                        <div className="capture-dot" />
+                                    </div>
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

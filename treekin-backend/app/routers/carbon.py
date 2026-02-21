@@ -4,11 +4,12 @@ from typing import List
 from ..database import get_db
 from ..models.user import User
 from ..models.tree import Tree
-from ..models.carbon import CarbonCredit, TreditTransaction
+from ..models.carbon import CarbonCredit, TreditTransaction, TreeSponsorship
 from ..schemas.carbon import (
     CarbonCreditResponse, TreditTransactionResponse,
     WalletResponse, CarbonEstimateRequest, CarbonEstimateResponse
 )
+from ..schemas.sponsorship import SponsorshipCreate, SponsorshipResponse
 from ..services.auth_utils import get_current_user
 
 router = APIRouter(prefix="/carbon", tags=["Carbon Credits"])
@@ -178,3 +179,37 @@ def get_carbon_history(
     ).order_by(CarbonCredit.created_at.desc()).all()
     
     return credits
+
+
+@router.post("/sponsor", response_model=SponsorshipResponse)
+def create_sponsorship(
+    sponsorship: SponsorshipCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new tree sponsorship contract."""
+    # Check if NGO exists
+    ngo = db.query(User).filter(User.id == sponsorship.ngo_id, User.is_ngo == True).first()
+    if not ngo:
+        raise HTTPException(status_code=404, detail="NGO not found")
+    
+    new_contract = TreeSponsorship(
+        user_id=current_user.id,
+        ngo_id=sponsorship.ngo_id,
+        tree_species=sponsorship.tree_species,
+        amount_paid=sponsorship.amount_paid,
+        status="pending"
+    )
+    db.add(new_contract)
+    db.commit()
+    db.refresh(new_contract)
+    return new_contract
+
+
+@router.get("/sponsored-trees", response_model=List[SponsorshipResponse])
+def get_sponsored_trees(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all sponsorship contracts for the current user."""
+    return db.query(TreeSponsorship).filter(TreeSponsorship.user_id == current_user.id).all()

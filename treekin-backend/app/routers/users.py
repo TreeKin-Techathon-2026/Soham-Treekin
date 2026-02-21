@@ -20,6 +20,15 @@ def list_users(
     return users
 
 
+@router.get("/ngos", response_model=List[UserSummary])
+def list_ngos(
+    db: Session = Depends(get_db)
+):
+    """List all verified NGOs."""
+    ngos = db.query(User).filter(User.is_ngo == True, User.is_active == True).all()
+    return ngos
+
+
 @router.get("/{user_id}", response_model=UserResponse)
 def get_user(user_id: int, db: Session = Depends(get_db)):
     """Get user by ID."""

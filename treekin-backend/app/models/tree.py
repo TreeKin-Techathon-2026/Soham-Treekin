@@ -77,6 +77,7 @@ class Tree(Base):
     # Relationships
     owner = relationship("User", foreign_keys=[owner_id])
     adopter = relationship("User", foreign_keys=[adopter_id])
+    sponsor = relationship("User", foreign_keys=[sponsor_id])
     posts = relationship("Post", back_populates="tree", cascade="all, delete-orphan")
     carbon_records = relationship("CarbonCredit", back_populates="tree", cascade="all, delete-orphan")
     events = relationship("TreeEvent", back_populates="tree", cascade="all, delete-orphan")

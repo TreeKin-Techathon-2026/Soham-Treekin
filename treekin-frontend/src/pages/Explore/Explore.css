@@ -1,156 +1,543 @@
+/* ============================================
+   Explore Page – Campaign Discovery
+   Modern, nature-inspired, mobile-first
+   ============================================ */
+
+/* ---- Page Container ---- */
 .explore-page {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 28px;
+    padding-bottom: 40px;
+    animation: exploreIn 0.45s ease-out;
 }
 
-.page-title {
-    font-size: 1.25rem;
-    margin: 0;
-}
+@keyframes exploreIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
 
-/* Loading */
-.loading {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 3rem;
-    color: #6b7280;
-}
-
-/* Filter Tabs */
-.filter-tabs {
-    display: flex;
-    gap: 0.5rem;
-    overflow-x: auto;
-}
-
-.filter-tab {
-    padding: 0.5rem 1rem;
-    background: #f3f4f6;
-    border: none;
-    border-radius: 20px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #6b7280;
-    cursor: pointer;
-    white-space: nowrap;
-}
-
-.filter-tab.active {
-    background: #059669;
-    color: white;
-}
-
-/* Empty State */
-.empty-state {
-    text-align: center;
-    padding: 3rem;
-    color: #9ca3af;
-}
-
-.empty-state p {
-    margin: 1rem 0;
-}
-
-/* Trees Grid */
-.trees-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
-}
-
-@media (max-width: 400px) {
-    .trees-grid {
-        grid-template-columns: 1fr;
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
-.tree-card {
+/* ---- Hero / Search Section ---- */
+.explore-hero {
+    background: linear-gradient(135deg, #065f46 0%, #047857 40%, #059669 100%);
+    border-radius: 20px;
+    padding: 32px 28px 24px;
+    color: white;
+    position: relative;
     overflow: hidden;
 }
 
-.tree-image {
+.explore-hero::before {
+    content: '';
+    position: absolute;
+    top: -60px;
+    right: -40px;
+    width: 200px;
+    height: 200px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.explore-hero::after {
+    content: '';
+    position: absolute;
+    bottom: -30px;
+    left: -20px;
+    width: 120px;
     height: 120px;
-    position: relative;
-    background: #ecfdf5;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 50%;
+    pointer-events: none;
 }
 
-.tree-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+.explore-hero__title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    margin: 0 0 6px;
+    letter-spacing: -0.5px;
 }
 
-.tree-placeholder {
-    width: 100%;
-    height: 100%;
+.text-green {
+    color: #86efac;
+}
+
+.explore-hero__subtitle {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.75);
+    margin: 0 0 20px;
+    font-weight: 400;
+}
+
+/* Search Bar */
+.explore-search-bar {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 14px;
+    padding: 0 14px;
+    gap: 10px;
+    transition: all 0.25s ease;
+}
+
+.explore-search-bar:focus-within {
+    background: rgba(255, 255, 255, 0.22);
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.search-icon {
+    color: rgba(255, 255, 255, 0.6);
+    flex-shrink: 0;
+}
+
+.explore-search-bar input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: white;
+    font-size: 0.95rem;
+    padding: 14px 0;
+    font-family: inherit;
+}
+
+.explore-search-bar input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.explore-location-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: white;
+    background: rgba(255, 255, 255, 0.18);
+    padding: 6px 12px;
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* Quick Filter Tags */
+.explore-quick-tags {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.explore-quick-tags::-webkit-scrollbar {
+    display: none;
+}
+
+.quick-tag {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 14px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    font-family: inherit;
+}
+
+.quick-tag:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-1px);
+}
+
+/* ---- Section Header ---- */
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.section-header__left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-header__icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 3rem;
-}
-
-.tree-badge {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    padding: 0.25rem 0.5rem;
+    width: 38px;
+    height: 38px;
     border-radius: 12px;
-    font-size: 0.65rem;
-    font-weight: 600;
-    text-transform: uppercase;
-}
-
-.status-planted {
     background: #dcfce7;
-    color: #059669;
+    color: #16a34a;
+    flex-shrink: 0;
 }
 
-.status-adopted {
-    background: #fef3c7;
-    color: #d97706;
-}
-
-.status-verified {
-    background: #dbeafe;
-    color: #2563eb;
-}
-
-.tree-info {
-    padding: 0.75rem;
-}
-
-.tree-name {
-    font-size: 0.95rem;
-    font-weight: 600;
+.section-header__title {
+    font-size: 1.15rem;
+    font-weight: 700;
     margin: 0;
-    color: #1f2937;
+    color: #1a1a1a;
+    letter-spacing: -0.3px;
 }
 
-.tree-species {
-    display: block;
-    font-size: 0.75rem;
-    color: #6b7280;
-    margin-top: 0.125rem;
+.section-header__subtitle {
+    font-size: 0.78rem;
+    color: #9ca3af;
+    margin: 2px 0 0;
+    font-weight: 400;
 }
 
-.tree-location {
+.section-header__see-all {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
-    font-size: 0.7rem;
-    color: #9ca3af;
-    margin-top: 0.25rem;
+    gap: 2px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #16a34a;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color 0.2s;
+    font-family: inherit;
 }
 
-.tree-carbon {
-    margin-top: 0.5rem;
-    font-size: 0.75rem;
+.section-header__see-all:hover {
     color: #059669;
+}
+
+/* ---- Trending Horizontal Scroll ---- */
+.trending-scroll {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 8px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.trending-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.campaign-card--trending {
+    min-width: 300px;
+    max-width: 320px;
+    scroll-snap-align: start;
+    flex-shrink: 0;
+}
+
+/* ---- Campaign Grid ---- */
+.campaign-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.campaign-grid--full {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+@media (max-width: 640px) {
+
+    .campaign-grid,
+    .campaign-grid--full {
+        grid-template-columns: 1fr;
+    }
+
+    .campaign-card--trending {
+        min-width: 280px;
+    }
+}
+
+/* ---- Campaign Card ---- */
+.campaign-card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow:
+        0 1px 3px rgba(0, 0, 0, 0.06),
+        0 4px 12px rgba(0, 0, 0, 0.04);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    cursor: pointer;
+}
+
+.campaign-card:hover {
+    transform: translateY(-4px);
+    box-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.08),
+        0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* Card Image */
+.campaign-card__image {
+    position: relative;
+    height: 160px;
+    overflow: hidden;
+}
+
+.campaign-card--trending .campaign-card__image {
+    height: 175px;
+}
+
+.campaign-card__image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+}
+
+.campaign-card:hover .campaign-card__image img {
+    transform: scale(1.05);
+}
+
+/* Badges on image */
+.campaign-card__badges {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    backdrop-filter: blur(8px);
+}
+
+.badge--trending {
+    background: rgba(239, 68, 68, 0.9);
+    color: white;
+}
+
+.badge--impact {
+    background: rgba(245, 158, 11, 0.9);
+    color: white;
+}
+
+/* Countdown */
+.campaign-card__countdown {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: white;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(8px);
+}
+
+/* Card Body */
+.campaign-card__body {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Tag Pill */
+.tag-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    width: fit-content;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+/* Title */
+.campaign-card__title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0;
+    color: #1a1a1a;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Description */
+.campaign-card__desc {
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin: 0;
+    line-height: 1.45;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Meta (location + date) */
+.campaign-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 4px;
+}
+
+.campaign-card__meta span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: #9ca3af;
     font-weight: 500;
 }
 
-.adopt-btn {
-    margin: 0 0.75rem 0.75rem;
+/* Footer (participants + register) */
+.campaign-card__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+    padding-top: 12px;
+    border-top: 1px solid #f3f4f6;
+}
+
+.campaign-card__participants {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.78rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+/* Register Button */
+.register-btn {
+    padding: 8px 18px;
+    border-radius: 10px;
+    border: none;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    font-family: inherit;
+    background: linear-gradient(135deg, #16a34a, #059669);
+    color: white;
+    box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25);
+}
+
+.register-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35);
+}
+
+.register-btn:active {
+    transform: translateY(0);
+}
+
+.register-btn--done {
+    background: #f0fdf4;
+    color: #16a34a;
+    box-shadow: none;
+    border: 1.5px solid #bbf7d0;
+}
+
+.register-btn--done:hover {
+    background: #dcfce7;
+    box-shadow: none;
+    transform: none;
+}
+
+/* ---- Loading State ---- */
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    color: #9ca3af;
+    font-size: 0.95rem;
+}
+
+/* ---- Responsive Fine-Tuning ---- */
+@media (max-width: 480px) {
+    .explore-hero {
+        padding: 24px 18px 20px;
+        border-radius: 16px;
+    }
+
+    .explore-hero__title {
+        font-size: 1.4rem;
+    }
+
+    .campaign-card__image {
+        height: 140px;
+    }
+
+    .campaign-card__body {
+        padding: 14px;
+    }
+
+    .section-header__icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+    }
+
+    .section-header__title {
+        font-size: 1.05rem;
+    }
+}
+
+@media (min-width: 768px) {
+    .explore-hero {
+        padding: 40px 36px 28px;
+    }
+
+    .explore-hero__title {
+        font-size: 2rem;
+    }
+
+    .campaign-card--trending {
+        min-width: 320px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .campaign-grid--full {
+        grid-template-columns: repeat(3, 1fr);
+    }
 }

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { Home, Compass, Plus, Trophy, User, Bell } from 'lucide-react';
+import { Home, Compass, Plus, Trophy, User, Bell, Leaf } from 'lucide-react';
 import './Layout.css';
 
 export const MainLayout: React.FC = () => {
@@ -40,6 +40,10 @@ export const MainLayout: React.FC = () => {
                     <div className="plant-fab">
                         <Plus size={26} strokeWidth={2.5} />
                     </div>
+                </NavLink>
+                <NavLink to="/carbon-credits" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                    <Leaf size={24} />
+                    <span>Credits</span>
                 </NavLink>
                 <NavLink to="/leaderboard" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
                     <Trophy size={24} />

@@ -1,7 +1,12 @@
 import type { ProfilePageResponse } from "../api/types";
+import { calculateTotalKgFromTrees } from "../../lib/tredits";
 
 export default function ProfileHeader({ data }: { data: ProfilePageResponse }) {
   const { user, profile, followersCount, followingCount, trees, posts, credits } = data;
+  
+  // Calculate O2 released from tree ages
+  const treeDates = trees.map(t => t.createdAt);
+  const o2ReleasedKg = calculateTotalKgFromTrees(treeDates);
 
   return (
     <div className="profile-header">
@@ -86,6 +91,12 @@ export default function ProfileHeader({ data }: { data: ProfilePageResponse }) {
             {credits.filter(c => c.creditType === 'TREDIT').reduce((s, c) => s + c.amount, 0)}
           </span>
           <span className="credit-label">Tredits</span>
+        </div>
+        <div className="credit-divider" />
+        <div className="credit-item">
+          <span className="credit-icon">🌬️</span>
+          <span className="credit-value">{o2ReleasedKg}kg</span>
+          <span className="credit-label">O2 Released</span>
         </div>
         <div className="credit-divider" />
         <div className="credit-item">

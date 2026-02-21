@@ -13,6 +13,7 @@ import { PlantTreePage } from './pages/PlantTree';
 import { ExplorePage } from './pages/Explore';
 import { ChatPage } from './pages/Chat';
 import { LeaderboardPage } from './pages/Leaderboard';
+import CarbonCredits from './pages/CarbonCredits/CarbonCredits';
 
 // Store
 import { useAuthStore } from './store/authStore';
@@ -69,6 +70,7 @@ function AppContent() {
         <Route path="/explore" element={<ExplorePage />} />
         <Route path="/chat" element={<ChatPage />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
+        <Route path="/carbon-credits" element={<CarbonCredits />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

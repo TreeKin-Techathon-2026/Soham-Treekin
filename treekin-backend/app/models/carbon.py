@@ -60,3 +60,33 @@ class TreditTransaction(Base):
     
     def __repr__(self):
         return f"<TreditTransaction {self.transaction_type}: {self.amount}>"
+
+
+class TreeSponsorship(Base):
+    """Contracts for funding trees to be planted by NGOs."""
+    
+    __tablename__ = "tree_sponsorships"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    ngo_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    
+    tree_species = Column(String(100), nullable=False)
+    amount_paid = Column(Float, nullable=False)
+    
+    # Status: pending, planted, verified
+    status = Column(String(20), default="pending")
+    
+    # Once the NGO plants the tree, they link it here
+    tree_id = Column(Integer, ForeignKey("trees.id"))
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    sponsor = relationship("User", foreign_keys=[user_id])
+    ngo = relationship("User", foreign_keys=[ngo_id])
+    tree = relationship("Tree")
+    
+    def __repr__(self):
+        return f"<TreeSponsorship {self.id}: {self.status}>"
