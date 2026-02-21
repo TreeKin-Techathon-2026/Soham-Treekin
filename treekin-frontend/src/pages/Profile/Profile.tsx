@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
     TreeDeciduous, Leaf, Award, Settings, ChevronRight, MapPin, Calendar,
     Link2, Heart, MessageCircle, Share2, Droplets, Bug, Edit2,
-    CheckCircle, Shield, Star, Trophy, Target, Zap
+    CheckCircle, Shield, Star, Trophy, Target, Zap, Plus, X, Upload, Image
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { treesAPI, carbonAPI, postsAPI } from '../../services/api';
@@ -74,6 +74,17 @@ export const ProfilePage: React.FC = () => {
     const [updatesLoading, setUpdatesLoading] = useState(false);
     const [fadeKey, setFadeKey] = useState(0);
 
+    // Add Growth Update modal state
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [uploadFile, setUploadFile] = useState<File | null>(null);
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [uploadCaption, setUploadCaption] = useState('');
+    const [uploadDate, setUploadDate] = useState(new Date().toISOString().split('T')[0]);
+    const [uploading, setUploading] = useState(false);
+    const [uploadError, setUploadError] = useState('');
+    const [showToast, setShowToast] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     const loadProfileData = async () => {
         if (!user) return;
         try {
@@ -133,6 +144,74 @@ export const ProfilePage: React.FC = () => {
             month: 'short', day: 'numeric', year: 'numeric'
         });
     };
+
+    // --- Add Growth Update handlers ---
+    const resetModal = () => {
+        setUploadFile(null);
+        setImagePreview(null);
+        setUploadCaption('');
+        setUploadDate(new Date().toISOString().split('T')[0]);
+        setUploadError('');
+        setUploading(false);
+    };
+
+    const handleOpenModal = () => {
+        resetModal();
+        setShowAddModal(true);
+    };
+
+    const handleCloseModal = () => {
+        if (uploading) return;
+        setShowAddModal(false);
+        resetModal();
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            setUploadError('Please select an image file');
+            return;
+        }
+        setUploadFile(file);
+        setUploadError('');
+        const reader = new FileReader();
+        reader.onloadend = () => setImagePreview(reader.result as string);
+        reader.readAsDataURL(file);
+    };
+
+    const handleSubmitUpdate = async () => {
+        if (!uploadFile) {
+            setUploadError('Please select an image');
+            return;
+        }
+        const today = new Date().toISOString().split('T')[0];
+        if (uploadDate > today) {
+            setUploadError('Date cannot be in the future');
+            return;
+        }
+        if (!selectedTreeId) return;
+
+        setUploading(true);
+        setUploadError('');
+        try {
+            await treesAPI.addTreeUpdate(selectedTreeId, uploadFile, uploadCaption || undefined, uploadDate);
+            setShowAddModal(false);
+            resetModal();
+            // Refresh updates for selected tree
+            await fetchUpdates(selectedTreeId);
+            setFadeKey(prev => prev + 1);
+            // Show success toast
+            setShowToast(true);
+            setTimeout(() => setShowToast(false), 3000);
+        } catch (err: any) {
+            setUploadError(err.response?.data?.detail || 'Failed to upload update');
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const todayStr = new Date().toISOString().split('T')[0];
 
     const formatDate = (dateStr: string) => {
         if (!dateStr) return '';
@@ -289,7 +368,7 @@ export const ProfilePage: React.FC = () => {
                                             {treeUpdates.map((update, idx) => (
                                                 <div key={idx} className="tree-update-card">
                                                     <div className="tree-update-image">
-                                                        <img src={update.image_url} alt={update.caption} />
+                                                        <img src={update.image_url} alt={update.caption} loading="lazy" />
                                                     </div>
                                                     <div className="tree-update-info">
                                                         <p className="tree-update-caption">{update.caption}</p>
@@ -299,16 +378,29 @@ export const ProfilePage: React.FC = () => {
                                                     </div>
                                                 </div>
                                             ))}
+                                            {/* Add update card - always last in grid */}
+                                            <div
+                                                className="tree-update-card add-update-grid-card"
+                                                onClick={handleOpenModal}
+                                                title="Add Growth Update"
+                                            >
+                                                <div className="add-update-grid-content">
+                                                    <div className="add-update-grid-icon">
+                                                        <Plus size={28} />
+                                                    </div>
+                                                    <p>Add Update</p>
+                                                </div>
+                                            </div>
                                         </div>
                                     ) : (
                                         <div className="tree-updates-empty">
                                             <p>No growth updates yet 🌱</p>
-                                            <span>Start documenting your tree's journey!</span>
+                                            <span>Start documenting your tree journey!</span>
                                             <button
-                                                className="plant-btn small"
-                                                onClick={() => window.location.href = `/tree/${selectedTreeId}`}
+                                                className="add-update-btn-empty"
+                                                onClick={handleOpenModal}
                                             >
-                                                Add Update
+                                                <Plus size={18} /> Add Growth Update
                                             </button>
                                         </div>
                                     )}
@@ -436,6 +528,97 @@ export const ProfilePage: React.FC = () => {
                     </button>
                 </div>
             </div>
+
+            {/* Add Growth Update Modal */}
+            {showAddModal && (
+                <div className="growth-modal-overlay" onClick={handleCloseModal}>
+                    <div className="growth-modal" onClick={e => e.stopPropagation()}>
+                        <div className="growth-modal-header">
+                            <h3>Add Growth Update</h3>
+                            <button className="growth-modal-close" onClick={handleCloseModal}>
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="growth-modal-body">
+                            {/* Image Upload */}
+                            <div
+                                className={`growth-modal-upload-area ${imagePreview ? 'has-preview' : ''}`}
+                                onClick={() => fileInputRef.current?.click()}
+                            >
+                                {imagePreview ? (
+                                    <img src={imagePreview} alt="Preview" className="growth-modal-preview" />
+                                ) : (
+                                    <div className="growth-modal-upload-placeholder">
+                                        <Image size={36} />
+                                        <p>Click to upload photo</p>
+                                        <span>JPG, PNG, WebP or GIF</span>
+                                    </div>
+                                )}
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleFileSelect}
+                                    style={{ display: 'none' }}
+                                />
+                            </div>
+
+                            {/* Caption */}
+                            <div className="growth-modal-field">
+                                <label>Caption (optional)</label>
+                                <textarea
+                                    value={uploadCaption}
+                                    onChange={e => setUploadCaption(e.target.value)}
+                                    placeholder="Describe this growth update..."
+                                    rows={3}
+                                    maxLength={500}
+                                />
+                            </div>
+
+                            {/* Date */}
+                            <div className="growth-modal-field">
+                                <label>Date</label>
+                                <input
+                                    type="date"
+                                    value={uploadDate}
+                                    onChange={e => setUploadDate(e.target.value)}
+                                    max={todayStr}
+                                />
+                            </div>
+
+                            {/* Error */}
+                            {uploadError && (
+                                <div className="growth-modal-error">{uploadError}</div>
+                            )}
+                        </div>
+
+                        <div className="growth-modal-footer">
+                            <button className="growth-modal-cancel" onClick={handleCloseModal} disabled={uploading}>
+                                Cancel
+                            </button>
+                            <button
+                                className="growth-modal-submit"
+                                onClick={handleSubmitUpdate}
+                                disabled={uploading || !uploadFile}
+                            >
+                                {uploading ? (
+                                    <><div className="loading-spinner-small" /> Uploading...</>
+                                ) : (
+                                    <><Upload size={16} /> Add Update</>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Success Toast */}
+            {showToast && (
+                <div className="growth-toast">
+                    Growth update added 🌱
+                </div>
+            )}
         </div>
     );
 };
