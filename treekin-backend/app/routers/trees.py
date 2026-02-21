@@ -6,6 +6,7 @@ import os
 import uuid
 import shutil
 from ..database import get_db
+from sqlalchemy.orm.attributes import flag_modified
 from ..models.user import User
 from ..models.tree import Tree, TreeEvent
 from ..schemas.tree import (
@@ -240,6 +241,91 @@ def get_tree_updates(tree_id: int, db: Session = Depends(get_db)):
     return updates
 
 
+@router.post("/{tree_id}/updates")
+def add_tree_update(
+    tree_id: int,
+    file: UploadFile = File(...),
+    caption: Optional[str] = Form(None),
+    uploaded_at: Optional[str] = Form(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Add a growth update (photo + caption + date) to a tree."""
+    # Verify tree exists and user owns/adopted it
+    tree = db.query(Tree).filter(Tree.id == tree_id).first()
+    if not tree:
+        raise HTTPException(status_code=404, detail="Tree not found")
+
+    if tree.owner_id != current_user.id and tree.adopter_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to add updates to this tree")
+
+    # Validate file type
+    allowed_types = ["image/jpeg", "image/png", "image/webp", "image/gif"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="Only image files (JPEG, PNG, WebP, GIF) allowed")
+
+    # Validate uploaded_at date (cannot be in the future)
+    if uploaded_at:
+        try:
+            parsed_date = datetime.fromisoformat(uploaded_at.replace("Z", "+00:00"))
+            if parsed_date.tzinfo:
+                compare_dt = datetime.now(parsed_date.tzinfo)
+            else:
+                compare_dt = datetime.utcnow()
+            if parsed_date > compare_dt:
+                raise HTTPException(status_code=400, detail="Date cannot be in the future")
+        except ValueError:
+            # Try simpler date format (YYYY-MM-DD)
+            try:
+                parsed_date = datetime.strptime(uploaded_at, "%Y-%m-%d")
+                if parsed_date.date() > datetime.utcnow().date():
+                    raise HTTPException(status_code=400, detail="Date cannot be in the future")
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid date format")
+    else:
+        uploaded_at = datetime.utcnow().isoformat()
+
+    # Generate unique filename and save
+    file_ext = os.path.splitext(file.filename)[1] if file.filename else ".jpg"
+    unique_filename = f"tree_{tree_id}_{uuid.uuid4().hex}{file_ext}"
+    user_folder = os.path.join(UPLOADS_DIR, current_user.username)
+    os.makedirs(user_folder, exist_ok=True)
+    file_path = os.path.join(user_folder, unique_filename)
+
+    try:
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save image: {str(e)}")
+
+    image_url = f"/assets/trees/{current_user.username}/{unique_filename}"
+
+    # Set as main image if tree has none
+    if not tree.main_image_url:
+        tree.main_image_url = image_url
+
+    # Append to images JSON array
+    current_images = tree.images or []
+    new_entry = {
+        "url": image_url,
+        "caption": caption or "",
+        "uploaded_at": uploaded_at,
+        "uploaded_by": current_user.id
+    }
+    current_images.append(new_entry)
+    tree.images = current_images
+    flag_modified(tree, "images")
+
+    db.commit()
+    db.refresh(tree)
+
+    return {
+        "image_url": image_url,
+        "caption": caption or "",
+        "uploaded_at": uploaded_at
+    }
+
+
 @router.post("/{tree_id}/upload-image")
 def upload_tree_image(
     tree_id: int,
@@ -294,6 +380,7 @@ def upload_tree_image(
         "uploaded_by": current_user.id
     })
     tree.images = current_images
+    flag_modified(tree, "images")
     
     # Auto-create a social post for this upload
     try:

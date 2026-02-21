@@ -79,6 +79,15 @@ export const treesAPI = {
         });
     },
     getTreeUpdates: (treeId: number) => api.get(`/trees/${treeId}/updates`),
+    addTreeUpdate: (treeId: number, file: File, caption?: string, uploadedAt?: string) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        if (caption) formData.append('caption', caption);
+        if (uploadedAt) formData.append('uploaded_at', uploadedAt);
+        return api.post(`/trees/${treeId}/updates`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+    },
 };
 
 // Posts API
