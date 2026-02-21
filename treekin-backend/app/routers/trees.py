@@ -14,8 +14,8 @@ from ..schemas.tree import (
     TreeAdoptRequest, TreeEventCreate, TreeEventResponse
 )
 from ..models.post import Post  # Import Post model
-
 from ..services.auth_utils import get_current_user
+from ..services.geo_utils import haversine_distance, extract_exif_gps, find_nearby_trees
 
 # Save uploads to frontend public folder so Vite serves them directly
 FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "..", "treekin-frontend", "public", "assets", "trees")
@@ -33,6 +33,19 @@ def create_tree(
 ):
     """Plant a new tree."""
     try:
+        # Geo-validation: Check if a tree already exists within 5 meters
+        if tree_data.geo_lat and tree_data.geo_lng:
+            nearby = find_nearby_trees(db, tree_data.geo_lat, tree_data.geo_lng, radius_m=5.0)
+            if nearby:
+                existing = nearby[0]
+                dist = int(existing._distance_m)
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"A tree already exists within {dist}m of this location "
+                           f"(Tree #{existing.id}: '{existing.name}'). "
+                           f"Choose a different spot or adopt the existing tree."
+                )
+
         # Exclude alias fields and fields not in Tree model
         tree_dict = tree_data.model_dump(exclude={'latitude', 'longitude', 'event_description'})
         tree = Tree(
@@ -298,6 +311,26 @@ def add_tree_update(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to save image: {str(e)}")
 
+    # Geo-validation: Extract GPS from EXIF if not provided by frontend
+    photo_lat = None
+    photo_lng = None
+    exif_gps = extract_exif_gps(file_path)
+    if exif_gps:
+        photo_lat = exif_gps["lat"]
+        photo_lng = exif_gps["lng"]
+
+    # Validate photo was taken near the tree (within 50m)
+    if photo_lat and photo_lng and tree.geo_lat and tree.geo_lng:
+        distance = haversine_distance(photo_lat, photo_lng, tree.geo_lat, tree.geo_lng)
+        if distance > 50:
+            # Remove the saved file since it's invalid
+            os.remove(file_path)
+            raise HTTPException(
+                status_code=400,
+                detail=f"Photo was taken {int(distance)}m from the tree. "
+                       f"Must be within 50m to verify you're near your tree."
+            )
+
     image_url = f"/assets/trees/{current_user.username}/{unique_filename}"
 
     # Set as main image if tree has none
@@ -310,7 +343,9 @@ def add_tree_update(
         "url": image_url,
         "caption": caption or "",
         "uploaded_at": uploaded_at,
-        "uploaded_by": current_user.id
+        "uploaded_by": current_user.id,
+        "photo_lat": photo_lat,
+        "photo_lng": photo_lng
     }
     current_images.append(new_entry)
     tree.images = current_images
@@ -363,6 +398,26 @@ def upload_tree_image(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to save image: {str(e)}")
     
+    # Geo-validation: Extract GPS from EXIF if not provided by frontend
+    photo_lat = latitude
+    photo_lng = longitude
+    if not photo_lat or not photo_lng:
+        exif_gps = extract_exif_gps(file_path)
+        if exif_gps:
+            photo_lat = exif_gps["lat"]
+            photo_lng = exif_gps["lng"]
+    
+    # Validate photo was taken near the tree (within 50m)
+    if photo_lat and photo_lng and tree.geo_lat and tree.geo_lng:
+        distance = haversine_distance(photo_lat, photo_lng, tree.geo_lat, tree.geo_lng)
+        if distance > 50:
+            os.remove(file_path)
+            raise HTTPException(
+                status_code=400,
+                detail=f"Photo was taken {int(distance)}m from the tree. "
+                       f"Must be within 50m to verify you're near your tree."
+            )
+    
     # Generate URL for the image (served by Vite from public/assets/trees/{username}/)
     image_url = f"/assets/trees/{current_user.username}/{unique_filename}"
     
@@ -374,8 +429,8 @@ def upload_tree_image(
     current_images = tree.images or []
     current_images.append({
         "url": image_url,
-        "latitude": latitude,
-        "longitude": longitude,
+        "latitude": photo_lat,
+        "longitude": photo_lng,
         "uploaded_at": datetime.utcnow().isoformat(),
         "uploaded_by": current_user.id
     })

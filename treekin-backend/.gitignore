@@ -1,0 +1,29 @@
+# Environment variables (credentials - NEVER commit)
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Uploads
+uploads/
+
+# IDE
+.vscode/
+.idea/
+*.swp
