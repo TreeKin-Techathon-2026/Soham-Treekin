@@ -69,6 +69,7 @@ export const treesAPI = {
     update: (id: number, data: any) => api.put(`/trees/${id}`, data),
     delete: (id: number) => api.delete(`/trees/${id}`),
     adopt: (treeId: number) => api.post('/trees/adopt', { tree_id: treeId }),
+    getMapTrees: () => api.get('/trees/map'),
     getNearby: (lat: number, lng: number, radius?: number) =>
         api.get('/trees/nearby', { params: { lat, lng, radius_km: radius || 5 } }),
     uploadImage: (treeId: number, file: File, latitude?: number, longitude?: number) => {

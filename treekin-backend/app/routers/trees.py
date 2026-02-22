@@ -125,6 +125,33 @@ def get_my_trees(
     return trees
 
 
+@router.get("/map")
+def get_map_trees(db: Session = Depends(get_db)):
+    """Get all trees with valid coordinates for the Go Green Map."""
+    trees = db.query(Tree).filter(
+        Tree.geo_lat.isnot(None),
+        Tree.geo_lng.isnot(None)
+    ).all()
+
+    result = []
+    for t in trees:
+        owner = db.query(User).filter(User.id == t.owner_id).first()
+        result.append({
+            "id": t.id,
+            "name": t.name,
+            "species": t.species,
+            "lat": t.geo_lat,
+            "lng": t.geo_lng,
+            "owner_name": owner.display_name or owner.username if owner else "Unknown",
+            "status": t.status,
+            "health_status": t.health_status,
+            "planted_date": t.planted_date.isoformat() if t.planted_date else None,
+            "main_image_url": t.main_image_url,
+        })
+
+    return result
+
+
 @router.get("/{tree_id}", response_model=TreeResponse)
 def get_tree(tree_id: int, db: Session = Depends(get_db)):
     """Get tree by ID."""

@@ -1,15 +1,24 @@
 import React from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { Home, Compass, Plus, Trophy, User, Bell, Leaf } from 'lucide-react';
+import { Home, Compass, Plus, Trophy, User, Bell, Leaf, MapPin } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import './Layout.css';
 
 export const MainLayout: React.FC = () => {
+    const navigate = useNavigate();
     return (
         <div className="app-layout">
             {/* Header */}
             <header className="app-header">
                 <div className="header-inner">
                     <div className="logo-area">
+                        <button
+                            className="header-btn map-btn"
+                            title="Go Green Map"
+                            onClick={() => navigate('/go-green-map')}
+                        >
+                            <MapPin size={22} />
+                        </button>
                         <span className="logo-emoji">🌳</span>
                         <h1 className="logo-title">TreeKin</h1>
                     </div>
